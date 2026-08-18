@@ -1,0 +1,234 @@
+@keyframes dropletPopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.0);
+  }
+}
+
+.droplet-pop-in {
+  animation: dropletPopIn 200ms ease-out forwards;
+}
+
+.droplet-interactive {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.droplet-dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
+.droplet-returning {
+  transition: left 250ms cubic-bezier(0.25, 1, 0.5, 1), top 250ms cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* Polished Droplet Absorption: Moves inward over 120ms (ease-out), shrinks & fades over 180ms (ease-in) */
+.droplet-absorbing {
+  transition: left 120ms ease-out, top 120ms ease-out, transform 180ms ease-in, opacity 180ms ease-in !important;
+  opacity: 0 !important;
+  transform: translate(-50%, -50%) scale(0) !important;
+  pointer-events: none !important;
+}
+
+/* Blue Pop / Ripple Ring & Sparkles Effect */
+@keyframes blueRippleExpand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0.95;
+    border-width: 3px;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes sparkleOut1 {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(-14px, -12px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleOut2 {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(14px, -10px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleOut3 {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(0, 15px) scale(0);
+    opacity: 0;
+  }
+}
+
+.water-ripple-container {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  z-index: 35;
+}
+
+.water-ripple-ring {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7), inset 0 0 6px rgba(56, 189, 248, 0.4);
+  background: radial-gradient(circle, rgba(186, 230, 253, 0.4) 0%, rgba(56, 189, 248, 0) 70%);
+  pointer-events: none;
+  animation: blueRippleExpand 180ms ease-out forwards;
+}
+
+.water-sparkle-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #7dd3fc;
+  box-shadow: 0 0 6px #38bdf8;
+  pointer-events: none;
+}
+
+.sparkle-1 {
+  animation: sparkleOut1 180ms ease-out forwards;
+}
+
+.sparkle-2 {
+  animation: sparkleOut2 180ms ease-out forwards;
+}
+
+.sparkle-3 {
+  animation: sparkleOut3 180ms ease-out forwards;
+}
+
+/* Counter Feedback Pop Animation */
+@keyframes counterPopFeedback {
+  0% {
+    transform: scale(1.0);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1.0);
+  }
+}
+
+.counter-pop-feedback {
+  animation: counterPopFeedback 200ms ease-out forwards;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .counter-pop-feedback {
+    animation: none !important;
+  }
+  .droplet-absorbing {
+    transition: opacity 100ms ease-out !important;
+    transform: translate(-50%, -50%) scale(0.5) !important;
+    opacity: 0 !important;
+  }
+  .water-ripple-ring {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .water-sparkle-dot {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+@keyframes buttonBounceIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.0);
+  }
+}
+
+.start-activity-btn-enter {
+  animation: buttonBounceIn 400ms ease-out forwards;
+}
+
+@keyframes buttonFadeOut {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+}
+
+.start-activity-btn-exit {
+  animation: buttonFadeOut 180ms ease-in forwards;
+}
+
+/* Stage 4 Next Button Entrance Animation: Fade in -> Scale 0.85 -> 1.05 -> 1.0 -> small bounce */
+@keyframes nextButtonEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  80% {
+    transform: scale(0.98);
+  }
+  90% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.0);
+  }
+}
+
+.next-button-enter {
+  animation: nextButtonEnter 600ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

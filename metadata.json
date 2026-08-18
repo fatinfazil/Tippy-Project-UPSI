@@ -1,0 +1,6 @@
+{
+  "name": "Tippy Wira Hijau",
+  "description": "An interactive climate adventure storybook for children aged 4–8.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

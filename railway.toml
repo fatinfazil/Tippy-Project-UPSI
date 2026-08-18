@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+# npm ci fails on Railway with EBUSY on the mounted node_modules/.cache.
+# --include=dev keeps vite-plugin-pwa available even when NODE_ENV=production.
+buildCommand = "npm install --include=dev && npm run build"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
