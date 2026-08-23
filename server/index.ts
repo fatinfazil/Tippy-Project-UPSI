@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import express from 'express';
-import { findChildByAccessCode, getDbHostLabel, initDb } from './db.ts';
+import { findChildByAccessCode, getDbHostLabel, getProgress, getQuizTotalScore, initDb, isProgressActivityType, listGameScores, listQuizResults, upsertGameScore, upsertProgress, upsertQuizResult } from './db.ts';
 import {
   addChildForParent,
   clearSessionCookie,
@@ -80,6 +80,255 @@ async function main(): Promise<void> {
       res.json(child);
     } catch (error) {
       console.error('Child lookup failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * Upsert one question score. Resolves children.user_id from access_code —
+   * never trusts a client-sent user_id.
+   */
+  app.post('/api/quiz/results', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.body?.access_code === 'string' ? req.body.access_code : '',
+      );
+      const quizId =
+        typeof req.body?.quiz_id === 'string' ? req.body.quiz_id.trim() : '';
+      const questionId =
+        typeof req.body?.question_id === 'string'
+          ? req.body.question_id.trim()
+          : '';
+      const scoreRaw = req.body?.score;
+      const score =
+        typeof scoreRaw === 'number'
+          ? scoreRaw
+          : typeof scoreRaw === 'string'
+            ? Number(scoreRaw)
+            : NaN;
+
+      if (!accessCode || !quizId || !questionId || !Number.isInteger(score)) {
+        res.status(400).json({
+          error:
+            'access_code, quiz_id, question_id, and integer score are required',
+        });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const result = await upsertQuizResult({
+        userId: child.user_id,
+        quizId,
+        questionId,
+        score,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('Quiz result upsert failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * List quiz results for a child (by access_code). Optional quiz_id filter;
+   * when quiz_id is set, also returns total_score.
+   */
+  app.get('/api/quiz/results', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.query.access_code === 'string' ? req.query.access_code : '',
+      );
+      const quizId =
+        typeof req.query.quiz_id === 'string' ? req.query.quiz_id.trim() : '';
+
+      if (!accessCode) {
+        res.status(400).json({ error: 'access_code is required' });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const results = await listQuizResults({
+        userId: child.user_id,
+        quizId: quizId || undefined,
+      });
+
+      if (quizId) {
+        const totalScore = await getQuizTotalScore(child.user_id, quizId);
+        res.json({ results, total_score: totalScore });
+        return;
+      }
+
+      res.json({ results });
+    } catch (error) {
+      console.error('Quiz result list failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * Upsert one game score. Resolves children.user_id from access_code —
+   * never trusts a client-sent user_id.
+   */
+  app.post('/api/game/scores', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.body?.access_code === 'string' ? req.body.access_code : '',
+      );
+      const gameId =
+        typeof req.body?.game_id === 'string' ? req.body.game_id.trim() : '';
+      const scoreRaw = req.body?.score;
+      const score =
+        typeof scoreRaw === 'number'
+          ? scoreRaw
+          : typeof scoreRaw === 'string'
+            ? Number(scoreRaw)
+            : NaN;
+
+      if (!accessCode || !gameId || !Number.isInteger(score)) {
+        res.status(400).json({
+          error: 'access_code, game_id, and integer score are required',
+        });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const result = await upsertGameScore({
+        userId: child.user_id,
+        gameId,
+        score,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('Game score upsert failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * List game scores for a child (by access_code). Optional game_id filter.
+   */
+  app.get('/api/game/scores', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.query.access_code === 'string' ? req.query.access_code : '',
+      );
+      const gameId =
+        typeof req.query.game_id === 'string' ? req.query.game_id.trim() : '';
+
+      if (!accessCode) {
+        res.status(400).json({ error: 'access_code is required' });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const scores = await listGameScores({
+        userId: child.user_id,
+        gameId: gameId || undefined,
+      });
+      res.json({ scores });
+    } catch (error) {
+      console.error('Game score list failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * Upsert resume bookmark. Resolves children.user_id from access_code —
+   * never trusts a client-sent user_id.
+   */
+  app.post('/api/progress', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.body?.access_code === 'string' ? req.body.access_code : '',
+      );
+      const activityTypeRaw = req.body?.activity_type;
+      const activityId =
+        typeof req.body?.activity_id === 'string'
+          ? req.body.activity_id.trim()
+          : '';
+      const phaseIdRaw = req.body?.phase_id;
+      const phaseId =
+        typeof phaseIdRaw === 'string'
+          ? phaseIdRaw.trim()
+          : phaseIdRaw == null
+            ? null
+            : '';
+
+      if (
+        !accessCode ||
+        !isProgressActivityType(activityTypeRaw) ||
+        !activityId
+      ) {
+        res.status(400).json({
+          error:
+            'access_code, activity_type (scene|game|quiz), and activity_id are required',
+        });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const result = await upsertProgress({
+        userId: child.user_id,
+        activityType: activityTypeRaw,
+        activityId,
+        phaseId,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('Progress upsert failed:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  /**
+   * Get resume bookmark for a child (by access_code).
+   */
+  app.get('/api/progress', async (req, res) => {
+    try {
+      const accessCode = parseAccessCode(
+        typeof req.query.access_code === 'string' ? req.query.access_code : '',
+      );
+
+      if (!accessCode) {
+        res.status(400).json({ error: 'access_code is required' });
+        return;
+      }
+
+      const child = await findChildByAccessCode(accessCode);
+      if (!child) {
+        res.status(404).json({ error: 'Child not found' });
+        return;
+      }
+
+      const progress = await getProgress(child.user_id);
+      res.json({ progress });
+    } catch (error) {
+      console.error('Progress lookup failed:', error);
       res.status(500).json({ error: 'Database error' });
     }
   });
