@@ -7,6 +7,7 @@ import {
   isLandscape,
 } from '../../utils/fullscreen';
 import { Scene02Phase } from '../../scenes/scene02/types';
+import { Scene05 } from '../../scenes/scene05/Scene05';
 import { scene1Config } from '../../scenes/scene01/scene01.config';
 import { WelcomeScreen } from './WelcomeScreen';
 import { IntroductionVideo } from './IntroductionVideo';
@@ -40,6 +41,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
   const [scene2Phase, setScene2Phase] = useState<Scene02Phase>('video');
   const [scene1ResetKey, setScene1ResetKey] = useState<number>(0);
   const [scene2ResetKey, setScene2ResetKey] = useState<number>(0);
+  const [scene5ResetKey, setScene5ResetKey] = useState<number>(0);
   const [isDevMode, setIsDevMode] = useState<boolean>(false);
   const [assetsLoaded, setAssetsLoaded] = useState<boolean>(false);
   // Identity from prop, path, ?u=, saved session, or a code parked by install.
@@ -101,15 +103,27 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
   }, []);
 
   const handleSelectScene = (scene: ActiveScene) => {
-    setActiveScene(scene);
-    if (scene === 'scene01') {
-      setScene1Phase('intro-video');
-      setScene1ResetKey((k) => k + 1);
-    } else if (scene === 'scene02') {
-      setScene2Phase('video');
-      setScene2ResetKey((k) => k + 1);
-    }
-  };
+
+  setActiveScene(scene);
+
+
+  if (scene === 'scene01') {
+
+    setScene1Phase('intro-video');
+    setScene1ResetKey((k) => k + 1);
+
+  } else if (scene === 'scene02') {
+
+    setScene2Phase('video');
+    setScene2ResetKey((k) => k + 1);
+
+  } else if (scene === 'scene05') {
+
+    setScene5ResetKey((k) => k + 1);
+
+  }
+
+};
 
   const handleSelectScene1Phase = (phase: StoryPhase) => {
     setActiveScene('scene01');
@@ -231,6 +245,17 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
             }}
           />
         )}
+        
+                {activeScene === 'scene05' && (
+          <Scene05
+            key={`scene5-${scene5ResetKey}`}
+            onComplete={() => {
+              setActiveScene('welcome');
+            }}
+            isDevMode={isDevMode}
+          />
+        )}
+
       </main>
 
       {/* Floating Developer Panel */}

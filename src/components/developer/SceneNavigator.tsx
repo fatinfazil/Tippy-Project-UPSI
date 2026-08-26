@@ -3,7 +3,11 @@ import { StoryPhase } from '../../types/story';
 import { Scene02Phase } from '../../scenes/scene02/types';
 import { Compass, Sparkles, Play, Film, MessageSquare, Zap } from 'lucide-react';
 
-export type ActiveScene = 'welcome' | 'scene01' | 'scene02';
+export type ActiveScene =
+  | 'welcome'
+  | 'scene01'
+  | 'scene02'
+  | 'scene05';
 
 interface SceneNavigatorProps {
   activeScene: ActiveScene;
@@ -68,6 +72,17 @@ export const SceneNavigator: React.FC<SceneNavigatorProps> = ({
           >
             Scene 2
           </button>
+
+          <button
+  onClick={() => onSelectScene('scene05')}
+  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer text-center ${
+    activeScene === 'scene05'
+      ? 'bg-sky-600 text-white shadow-md'
+      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+  }`}
+>
+  Scene 5
+</button>
         </div>
       </div>
 
@@ -78,6 +93,7 @@ export const SceneNavigator: React.FC<SceneNavigatorProps> = ({
           {activeScene === 'welcome' && 'Welcome Screen'}
           {activeScene === 'scene01' && 'Scene 1 (Park)'}
           {activeScene === 'scene02' && 'Scene 2 (Garden)'}
+          {activeScene === 'scene05' && 'Scene 5 (Green City)'}
         </span>
       </div>
 
@@ -87,7 +103,7 @@ export const SceneNavigator: React.FC<SceneNavigatorProps> = ({
           <label className="text-[10px] uppercase tracking-wider text-amber-400 font-bold block">
             Scene 1 Phase Jump
           </label>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             <button
               onClick={() => onSelectScene1Phase('intro-video')}
               className={`py-1.5 px-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
