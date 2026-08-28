@@ -119,11 +119,15 @@ const stopBackgroundMusic = () => {
 
   const [gameStarted, setGameStarted] = useState(false);
 
+  const [showStartButton, setShowStartButton] = useState(true);
+
   const [gamePaused, setGamePaused] = useState(false);
 
  const [timeLeft, setTimeLeft] = useState(60);
 
   const [dangerTime,setDangerTime]=useState(false);
+
+  const [tenSecondWarning, setTenSecondWarning] = useState(false);
 
   const [selectedPlant, setSelectedPlant] = useState<string | null>(null);
 
@@ -154,15 +158,38 @@ x:number;
 y:number;
 } | null>(null);
 
-  const playSound = (file: string) => {
+  const currentSound = useRef<HTMLAudioElement | null>(null);
 
-    const audio = new Audio(`/sounds/${file}`);
 
-    audio.volume = 0.5;
+const playSound = (file:string) => {
 
-    audio.play();
 
-  };
+  // stop audio sebelumnya
+  if(currentSound.current){
+
+    currentSound.current.pause();
+
+    currentSound.current.currentTime = 0;
+
+  }
+
+
+  const audio = new Audio(
+    `/sounds/${file}`
+  );
+
+
+  audio.volume = 0.5;
+
+
+  currentSound.current = audio;
+
+
+  audio.play()
+  .catch(()=>{});
+
+
+};
 
   const [worldSpeed, setWorldSpeed] = useState(0.5);
 
@@ -373,18 +400,25 @@ const createTarget = (
 
   const [activeTargets, setActiveTargets] = useState<any[]>([]);
 
-  const showTippyTalk = (message:string) => {
-
-  setTippyTalking(true);
+ const showTippyTalk = (
+message:string,
+reset=true
+) => {
 
   setSpeechText(message);
 
 
-  setTimeout(()=>{
+  if(reset){
 
-    setTippyTalking(false);
+    setTimeout(() => {
 
-  },3000);
+      setSpeechText(
+        "Pick a plant and drag it to the matching spot! 🌱"
+      );
+
+    },3000);
+
+  }
 
 };
 
@@ -516,43 +550,54 @@ setScoreStar(null);
       playSound("plant.mp3");
 
 
-      // dialogue ikut plant
+     // dialogue ikut plant
 
-      if (draggingPlant === "tree") {
+if (draggingPlant === "tree") {
 
-showTippyTalk(
-  "Wonderful! Trees help absorb rainwater and keep our city green!"
-);
+  showTippyTalk(
+    "Wonderful! Trees help absorb rainwater and keep our city green!"
+  );
+
+  playSound(
+    "scene05/scene05_tree_success.mp3"
+  );
 
 }
 
-
-if (draggingPlant === "grass") {
+else if (draggingPlant === "grass") {
 
   showTippyTalk(
     "Great! Grass helps the soil absorb rainwater!"
   );
 
+  playSound(
+    "scene05/scene05_grass_success.mp3"
+  );
+
 }
 
-
-if (draggingPlant === "flower") {
+else if (draggingPlant === "flower") {
 
   showTippyTalk(
     "Beautiful! Flowers make our city greener and brighter!"
   );
 
-}
+  playSound(
+    "scene05/scene05_flower_success.mp3"
+  );
 
+}
     }
-   else {
+  else {
 
 
 setSpeechText(
   "Oops! Try another matching spot! 🌱"
 );
 
+
 setLives(prev => {
+
 
 
 const newLife = prev - 1;
@@ -641,35 +686,61 @@ playSound("wrong.mp3");
 
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  const startGameCountdown = () => {
+
+    playStartCountdown();
+
+setCountdown(3);
+
+setTimeout(()=>{
+setCountdown(2);
+},1000);
+
+setTimeout(()=>{
+setCountdown(1);
+},2000);
+
+setTimeout(()=>{
+setCountdown(null);
+setShowGo(true);
+},3000);
+
+setTimeout(()=>{
+
+setShowGo(false);
+
+setGameStarted(true);
+
+setTippyHidden(false);
+setTippyTalking(false);
+setTippyWalking(true);
+
+playBackgroundMusic();
+
+setSpeechText(
+"Pick a plant and drag it to the matching spot! 🌱"
+);
+
+},4000);
+
+};
+
   const [showGo, setShowGo] = useState(false);
 
-  const [tippyConfig, setTippyConfig] = useState(() => {
+// Walking position
+const [tippyConfig, setTippyConfig] = useState({
+  x: -3,
+  y: 37,
+  size: 500
+});
 
-    const saved = localStorage.getItem(
-      "scene05-tippy"
-    );
 
-
-    return saved
-      ?
-      JSON.parse(saved)
-      :
-      {
-        x: 8,
-        y: 60,
-        size: 180
-      };
-
-  });
-
-  useEffect(() => {
-
-    localStorage.setItem(
-      "scene05-tippy",
-      JSON.stringify(tippyConfig)
-    );
-
-  }, [tippyConfig]);
+// Talking position (Intro + Replay)
+const talkingTippyConfig = {
+  x: 8.5,
+  y: 30,
+  size: 350
+};
 
   useEffect(()=>{
 
@@ -730,6 +801,17 @@ if (nextTime <= 10 && nextTime > 0) {
   setDangerTime(true);
 
   playCountdownSound();
+
+
+  if (nextTime === 10 && !tenSecondWarning) {
+
+    setTenSecondWarning(true);
+
+    setSpeechText(
+      "Ten seconds left! Keep going!"
+    );
+
+}
 
 } else {
 
@@ -871,99 +953,95 @@ return ()=>clearTimeout(speedUp);
 
   }, [gameStarted, worldSpeed, gamePaused]);
 
-  useEffect(() => {
+
+ 
+
+const [dialogueConfig, setDialogueConfig] = useState(() => {
+
+ const saved = localStorage.getItem(
+   "scene05-dialogue"
+ );
+
+ return saved
+ ?
+ JSON.parse(saved)
+ :
+ {
+   x: 8,
+   y: 32,
+   width: 420
+ };
+
+});
+
+const introDialogueConfig = {
+  x: 5,
+  y: 15,
+  width: 450
+};
 
 
-    if (countdown === null) return;
+const gameDialogueConfig = {
+  x: 5,
+  y: 19,
+  width: 290
+};
 
+const [tippyTalking, setTippyTalking] = useState(true);
+const [tippyWalking, setTippyWalking] = useState(false);
+const [tippyHidden, setTippyHidden] = useState(false);
 
-    const counter = setInterval(() => {
+const playSceneIntro = () => {
 
-
-      setCountdown(prev => {
-
-
-       if (prev === 1) {
-
-clearInterval(counter);
-
-
-setCountdown(null);
-
-setShowGo(true);
-
-
-setTimeout(() => {
-
-setShowGo(false);
-
-setGameStarted(true);
-
-setTippyWalking(true);
-
-playBackgroundMusic();
-
-setSpeechText(
-  "Pick a plant and drag it to the matching spot! 🌱"
+const introAudio = new Audio(
+"/sounds/scene05/scene05_intro.mp3"
 );
 
-}, 1000);
+introAudio.volume = 0.5;
+
+introAudio.play();
 
 
-return null;
+introAudio.onended = () => {
 
-}
-
-
-        return prev ? prev - 1 : null;
-
-
-      });
+setSpeechText(
+"Can you please help me? Match the same plants, then drag and drop them into the correct spots! 🌱"
+);
 
 
-    }, 1000);
+playSound(
+"scene05/scene05_instruction.mp3"
+);
+
+};
+
+};
 
 
+// LETAK SINI
+const playTryAgain = () => {
 
-    return () => clearInterval(counter);
+setSpeechText(
+"Good effort! Let's keep making our city greener! 🌱"
+);
 
+playSound(
+"scene05/scene05_try_again.mp3"
+);
 
-  }, [countdown]);
-
-  const [dialogueConfig, setDialogueConfig] = useState(() => {
-
-    const saved = localStorage.getItem(
-      "scene05-dialogue"
-    );
-
-    return saved
-      ?
-      JSON.parse(saved)
-      :
-      {
-        x: 20,
-        y: 35,
-        width: 250
-      };
-
-  });
-
-const [tippyTalking, setTippyTalking] = useState(false);
-const [tippyWalking, setTippyWalking] = useState(false);
-  const [speechText, setSpeechText] = useState(() => {
-
-    const saved = localStorage.getItem(
-      "scene05-speech"
-    );
+};
 
 
-    return saved
-      ?
-      saved
-      :
-      "Let's make Iskandar Puteri greener!";
+useEffect(() => {
 
-  });
+playSceneIntro();
+
+}, []);
+
+  const [speechText, setSpeechText] = useState(
+"Let's make our city greener! 🌱"
+);
+
 
   useEffect(() => {
 
@@ -1025,7 +1103,7 @@ const [tippyWalking, setTippyWalking] = useState(false);
 
 const resultMessage: string =
   greenScore >= 15
-    ? "Amazing! You made Iskandar Puteri greener!"
+    ? "Amazing! You made our city greener!"
     : greenScore >= 8
     ? "Great job! Our city is now healthier!"
     : "Good effort! Let's keep making our city greener!";
@@ -1314,15 +1392,16 @@ object-contain
       }
 
 
-
+{
+!tippyHidden && (
       <img
 
-        src={
-tippyTalking
-?
-"/characters/tippy/tippy-talking.gif"
-:
-"/characters/tippy/tippy-idle.gif"
+       src={
+  tippyTalking
+    ? "/characters/tippy/tippy-talking.gif"
+    : tippyWalking
+    ? "/characters/tippy/tippy-walk-side.gif"
+    : "/characters/tippy/tippy-idle.gif"
 }
 
         alt="Tippy"
@@ -1342,16 +1421,30 @@ tippyWalking && !tippyTalking
 
 `}
         style={{
+  left: `${
+    tippyTalking
+    ? talkingTippyConfig.x
+    : tippyConfig.x
+  }%`,
 
-          left: `${tippyConfig.x}%`,
+  top: `${
+    tippyTalking
+    ? talkingTippyConfig.y
+    : tippyConfig.y
+  }%`,
 
-          top: `${tippyConfig.y}%`,
+  width: `${
+    tippyTalking
+    ? talkingTippyConfig.size
+    : tippyConfig.size
+  }px`
+}}
 
-          width: `${tippyConfig.size}px`
 
-        }}
 
       />
+      )
+}
 
       {
         draggingPlant && (
@@ -1872,7 +1965,7 @@ countdown
 
 
             {
-              !gameFinished && (
+!gameFinished && !tippyHidden && (
 
                 <div
 
@@ -1887,11 +1980,25 @@ to-blue-50
   p-4
   text-center
   "
-                  style={{
-                    left: `${dialogueConfig.x}%`,
-                    top: `${dialogueConfig.y}%`,
-                    width: `${dialogueConfig.width}px`
-                  }}
+                 style={{
+ left: `${
+   !gameStarted
+   ? introDialogueConfig.x
+   : gameDialogueConfig.x
+ }%`,
+
+ top: `${
+   !gameStarted
+   ? introDialogueConfig.y
+   : gameDialogueConfig.y
+ }%`,
+
+ width: `${
+   !gameStarted
+   ? introDialogueConfig.width
+   : gameDialogueConfig.width
+ }px`
+}}
                 >
 
                   {/* Name */}
@@ -1900,7 +2007,11 @@ to-blue-50
     text-green-600
     font-bold
     text-xs
-    mb-1
+    mb-1Help Tippy make the city greener! 🌱
+
+Match the same plants,
+then drag and drop them
+into the correct spots!
     "
                   >
                     TIPPY
@@ -1908,15 +2019,25 @@ to-blue-50
 
 
                   {/* Dialogue */}
-                  <div
-                    className="
-    text-gray-800
-    font-medium
-    text-sm
-    leading-relaxed
-    "
-                  >
-                    {speechText}
+                <div
+className={`
+text-gray-800
+font-bold
+leading-relaxed
+
+${
+!gameStarted
+?
+"text-lg"
+:
+"text-lg"
+}
+
+`}
+>
+                   {
+ speechText
+}
                   </div>
 
 
@@ -1945,25 +2066,29 @@ to-blue-50
 
             {/* Start Button */}
 
-            {
-              !gameStarted &&
-              !gameFinished &&
-              countdown === null &&
-              !showGo && (
+          {
+ showStartButton &&
+ !gameStarted &&
+ !gameFinished &&
+ countdown === null &&
+ !showGo && (
 
                 <button
 
                   onClick={() => {
 
-                    playClickSound();
+playClickSound();
 
-                    scoreSavedRef.current = false;
+setShowStartButton(false);
 
-                    setTimeLeft(60);
+scoreSavedRef.current = false;
 
-                    playStartCountdown();
+setTimeLeft(60);
 
-                    setCountdown(3);
+setTippyHidden(true);
+setTippyTalking(false);
+setTippyWalking(false);
+setSpeechText("");
 
                     setGreenScore(0);
                     setPlacedPlants([]);
@@ -1973,29 +2098,27 @@ to-blue-50
 {
 id:0,
 type:"tree",
-x:55,
+x:75,
 y:82
 },
 
 {
 id:1,
 type:"grass",
-x:70,
+x:95,
 y:82
 },
 
 {
 id:2,
 type:"flower",
-x:85,
+x:115,
 y:82
 }
 
 ]);
 
-                    setSpeechText(
-                      "Let's make Iskandar Puteri greener! 🌱"
-                    );
+                    startGameCountdown();
 
                   }}
 
@@ -2062,17 +2185,6 @@ left-1/2
 -translate-x-1/2
 
 z-[999]
-
-bg-green-50/80
-backdrop-blur-sm
-
-px-8
-py-5
-
-rounded-3xl
-
-shadow-lg
-
 "
                 >
 
@@ -2107,24 +2219,37 @@ mb-2
                   className="
                   flex
                   items-center
-                  gap-3
+                  gap-4
                   "
-                  >
+                                    >
 
                     {/* TREE */}
 
-                    <div
+                   <div
+  className="
+    w-24
+    h-24
 
-                      className="
-                      flex
-                      flex-col
-                      items-center
+    flex
+    items-center
+    justify-center
 
-                      cursor-pointer
+    rounded-3xl
 
-                      "
+    bg-white/85
+    backdrop-blur-sm
 
-                    >
+    border-2
+    border-green-300
+
+    shadow-[0_0_25px_rgba(34,197,94,0.9)]
+    animate-pulse
+    cursor-pointer
+
+    hover:scale-105
+    transition-transform
+  "
+>
 
 
                       <img
@@ -2179,17 +2304,30 @@ ${selectedPlant === "tree"
                     {/* GRASS */}
 
                     <div
+  className="
+    w-24
+    h-24
 
-                      className="
-flex
-flex-col
-items-center
+    flex
+    items-center
+    justify-center
 
-cursor-pointer
+    rounded-3xl
 
-"
+    bg-white/85
+    backdrop-blur-sm
 
-                    >
+    border-2
+    border-green-300
+
+    shadow-[0_0_25px_rgba(34,197,94,0.9)]
+    animate-pulse
+    cursor-pointer
+
+    hover:scale-105
+    transition-transform
+  "
+>
 
 
                       <img
@@ -2246,18 +2384,31 @@ ${selectedPlant === "grass"
 
                     {/* FLOWER */}
 
-                    <div
+                   <div
+  className="
+    w-24
+    h-24
 
-                      className="
-flex
-flex-col
-items-center
+    flex
+    items-center
+    justify-center
 
-cursor-pointer
+    rounded-3xl
 
-"
+    bg-white/85
+    backdrop-blur-sm
 
-                    >
+    border-2
+    border-green-300
+
+    shadow-[0_0_25px_rgba(34,197,94,0.9)]
+    animate-pulse
+    cursor-pointer
+
+    hover:scale-105
+    transition-transform
+  "
+>
 
 
                       <img
@@ -2597,10 +2748,13 @@ ${selectedPlant === "flower"
               setGameStarted(false);
 
               setGamePaused(false);
+              setShowStartButton(true);
 
               setTimeLeft(60);
 
               setDangerTime(false);
+
+              setTenSecondWarning(false);
 
               setGreenScore(0);
 
@@ -2616,15 +2770,21 @@ ${selectedPlant === "flower"
 
               setIsHolding(false);
 
-              setTippyTalking(false);
+              setTippyTalking(true);
+setTippyWalking(false);
 
-              setTippyWalking(false);
+setTippyConfig({
+   x: -3,
+  y: 37,
+  size: 500 
+});
 
               spawnIndex.current = 0;
 
-              setSpeechText(
-                "Let's make Iskandar Puteri greener! 🌱"
-              );
+             playTryAgain();
+
+              setCountdown(null);
+setShowGo(false);
 
             }}
 
@@ -2722,21 +2882,6 @@ pointer-events-auto
 "
 >
 
-<Scene05DeveloperPanel
-
-tippyConfig={tippyConfig}
-
-setTippyConfig={setTippyConfig}
-
-dialogueConfig={dialogueConfig}
-
-setDialogueConfig={setDialogueConfig}
-
-speechText={speechText}
-
-setSpeechText={setSpeechText}
-
-/>
 
 </div>
 

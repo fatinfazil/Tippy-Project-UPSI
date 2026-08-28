@@ -3,6 +3,7 @@ import { StoryPhase } from '../../types/story';
 import { Scene02Phase } from '../../scenes/scene02/types';
 import { SceneNavigator, ActiveScene } from './SceneNavigator';
 import { GripHorizontal } from 'lucide-react';
+import { Scene05DeveloperPanel } from '../../scenes/scene05/Scene05DeveloperPanel';
 
 interface DeveloperPanelProps {
   activeScene: ActiveScene;
