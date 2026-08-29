@@ -115,7 +115,81 @@ const stopBackgroundMusic = () => {
 
 };
 
+const stopDialogueAudio = () => {
+
+  if(dialogueAudio.current){
+
+    dialogueAudio.current.pause();
+
+    dialogueAudio.current.currentTime = 0;
+
+    dialogueAudio.current = null;
+
+  }
+
+};
+
+const finishGame = () => {
+
+
+  // hentikan semua suara Tippy
+  stopDialogueAudio();
+
+
+  // hentikan sound semasa
+  if(currentSound.current){
+
+    currentSound.current.pause();
+
+    currentSound.current.currentTime = 0;
+
+  }
+
+
+  // hentikan countdown
+  if(countdownAudio.current){
+
+    countdownAudio.current.pause();
+
+    countdownAudio.current.currentTime = 0;
+
+  }
+
+
+  // hentikan background
+  stopBackgroundMusic();
+
+
+  setSpeechText(
+    dialogue[language ?? "en"].complete
+  );
+
+
+  setTippyTalking(true);
+  setTippyWalking(false);
+
+
+  setGameFinished(true);
+  setGameStarted(false);
+
+
+  // celebration sahaja
+  setTimeout(()=>{
+
+    playSound(
+      "celebration.mp3"
+    );
+
+  },700);
+
+
+};
+
   const [developerMode, setDeveloperMode] = useState(false);
+
+  const [languageLocked, setLanguageLocked] = useState(false);
+
+  const [language, setLanguage] = useState<"en" | "bm">("en");
 
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -159,34 +233,48 @@ y:number;
 } | null>(null);
 
   const currentSound = useRef<HTMLAudioElement | null>(null);
+  const dialogueAudio = useRef<HTMLAudioElement | null>(null);
 
 
-const playSound = (file:string) => {
+const playSound = (
+file:string,
+onEnded?:()=>void
+) => {
+
+  stopDialogueAudio();
+
+if(currentSound.current){
+
+currentSound.current.pause();
+
+currentSound.current.currentTime=0;
+
+}
 
 
-  // stop audio sebelumnya
-  if(currentSound.current){
+const audio = new Audio(
+`/sounds/${file}`
+);
 
-    currentSound.current.pause();
+dialogueAudio.current = audio;
 
-    currentSound.current.currentTime = 0;
-
-  }
-
-
-  const audio = new Audio(
-    `/sounds/${file}`
-  );
+audio.volume=0.5;
 
 
-  audio.volume = 0.5;
+currentSound.current = audio;
 
 
-  currentSound.current = audio;
+audio.play()
+.catch(()=>{});
 
 
-  audio.play()
-  .catch(()=>{});
+audio.onended = ()=>{
+
+if(onEnded){
+onEnded();
+}
+
+};
 
 
 };
@@ -401,24 +489,18 @@ const createTarget = (
   const [activeTargets, setActiveTargets] = useState<any[]>([]);
 
  const showTippyTalk = (
-message:string,
-reset=true
+message:string
 ) => {
 
   setSpeechText(message);
 
+};
 
-  if(reset){
+const resetTippyInstruction = () => {
 
-    setTimeout(() => {
-
-      setSpeechText(
-        "Pick a plant and drag it to the matching spot! 🌱"
-      );
-
-    },3000);
-
-  }
+setSpeechText(
+dialogue[language ?? "en"].instruction
+);
 
 };
 
@@ -546,8 +628,7 @@ setScoreStar(null);
 },1200);
 
 
-      // sound
-      playSound("plant.mp3");
+    
 
 
      // dialogue ikut plant
@@ -555,36 +636,73 @@ setScoreStar(null);
 if (draggingPlant === "tree") {
 
   showTippyTalk(
-    "Wonderful! Trees help absorb rainwater and keep our city green!"
-  );
+dialogue[language ?? "en"].tree
+);
 
-  playSound(
-    "scene05/scene05_tree_success.mp3"
-  );
+
+playSound(
+
+language === "bm"
+?
+"scene05/scene05_tree_success_bm.mp3"
+:
+"scene05/scene05_tree_success.mp3",
+
+()=>{
+
+resetTippyInstruction();
+
+}
+
+);
 
 }
 
 else if (draggingPlant === "grass") {
 
   showTippyTalk(
-    "Great! Grass helps the soil absorb rainwater!"
+    dialogue[language ?? "en"].grass
   );
 
-  playSound(
-    "scene05/scene05_grass_success.mp3"
-  );
+ playSound(
+
+language === "bm"
+?
+"scene05/scene05_grass_success_bm.mp3"
+:
+"scene05/scene05_grass_success.mp3",
+
+()=>{
+
+resetTippyInstruction();
+
+}
+
+);
 
 }
 
 else if (draggingPlant === "flower") {
 
   showTippyTalk(
-    "Beautiful! Flowers make our city greener and brighter!"
+    dialogue[language ?? "en"].flower
   );
 
   playSound(
-    "scene05/scene05_flower_success.mp3"
-  );
+
+language === "bm"
+?
+"scene05/scene05_flower_success_bm.mp3"
+:
+"scene05/scene05_flower_success.mp3",
+
+()=>{
+
+resetTippyInstruction();
+
+}
+
+);
 
 }
     }
@@ -592,7 +710,7 @@ else if (draggingPlant === "flower") {
 
 
 setSpeechText(
-  "Oops! Try another matching spot! 🌱"
+  dialogue[language ?? "en"].wrong
 );
 
 
@@ -606,11 +724,13 @@ const newLife = prev - 1;
 if (newLife <= 0) {
 
   setSpeechText(
-    "Good effort! Let's keep making our city greener! 🌱"
-  );
+  dialogue[language ?? "en"].complete
+);
 
   setTippyTalking(true);
   setTippyWalking(false);
+
+  stopDialogueAudio();
 
   setGameFinished(true);
   setGameStarted(false);
@@ -622,7 +742,9 @@ if (newLife <= 0) {
     countdownAudio.current.currentTime = 0;
   }
 
-  playSound("celebration.mp3");
+  playSound(
+"celebration.mp3"
+);
 
 }
 
@@ -632,8 +754,13 @@ return newLife;
 
 });
 
-
-playSound("wrong.mp3");
+playSound(
+  language === "bm"
+  ?
+  "scene05/scene05_wrong_bm.mp3"
+  :
+  "scene05/scene05_wrong.mp3"
+);
 
 
 }
@@ -718,7 +845,7 @@ setTippyWalking(true);
 playBackgroundMusic();
 
 setSpeechText(
-"Pick a plant and drag it to the matching spot! 🌱"
+dialogue[language ?? "en"].instruction
 );
 
 },4000);
@@ -729,9 +856,9 @@ setSpeechText(
 
 // Walking position
 const [tippyConfig, setTippyConfig] = useState({
-  x: -3,
-  y: 37,
-  size: 500
+  x:-1.7,
+  y:37,
+  size:500
 });
 
 
@@ -764,33 +891,12 @@ const talkingTippyConfig = {
 
        if (prev <= 1) {
 
-  clearInterval(timer);
 
+clearInterval(timer);
 
-  setDangerTime(false);
+finishGame();
 
-  setSpeechText(
-    "Good effort! Let's keep making our city greener! 🌱"
-  );
-
-  setTippyTalking(true);
-  setTippyWalking(false);
-
-  stopBackgroundMusic();
-
-  if (countdownAudio.current) {
-    countdownAudio.current.pause();
-    countdownAudio.current.currentTime = 0;
-  }
-
-  setGameFinished(true);
-  setGameStarted(false);
-
-  setTimeout(() => {
-    playSound("celebration.mp3");
-  }, 300);
-
-  return 0;
+return 0;
 
 }
 
@@ -805,11 +911,19 @@ if (nextTime <= 10 && nextTime > 0) {
 
   if (nextTime === 10 && !tenSecondWarning) {
 
-    setTenSecondWarning(true);
+   setTenSecondWarning(true);
 
-    setSpeechText(
-      "Ten seconds left! Keep going!"
-    );
+setSpeechText(
+  dialogue[language ?? "en"].time
+);
+
+playSound(
+  language === "bm"
+  ?
+  "scene05/scene05_time_warning_bm.mp3"
+  :
+  "scene05/scene05_time_warning.mp3"
+);
 
 }
 
@@ -982,9 +1096,9 @@ const introDialogueConfig = {
 
 
 const gameDialogueConfig = {
-  x: 5,
-  y: 19,
-  width: 290
+  x: 2,
+  y: 20,
+  width: 420
 };
 
 const [tippyTalking, setTippyTalking] = useState(true);
@@ -993,55 +1107,182 @@ const [tippyHidden, setTippyHidden] = useState(false);
 
 const playSceneIntro = () => {
 
+const introFile =
+language === "bm"
+?
+"scene05/scene05_intro_bm.mp3"
+:
+"scene05/scene05_intro.mp3";
+
+
+const instructionFile =
+language === "bm"
+?
+"scene05/scene05_instruction_bm.mp3"
+:
+"scene05/scene05_instruction.mp3";
+
+stopDialogueAudio();
+
+
 const introAudio = new Audio(
-"/sounds/scene05/scene05_intro.mp3"
+`/sounds/${introFile}`
 );
+
+dialogueAudio.current = introAudio;
+
+
+introAudio.play()
+.catch(()=>{});
+
 
 introAudio.volume = 0.5;
 
-introAudio.play();
+
+introAudio.play()
+.catch(()=>{});
 
 
 introAudio.onended = () => {
 
+
+if(language === "bm"){
+
 setSpeechText(
-"Can you please help me? Match the same plants, then drag and drop them into the correct spots! 🌱"
+dialogue[language ?? "en"].help
 );
+
+}
+else{
+
+setSpeechText(
+dialogue[language ?? "en"].help
+);
+
+}
 
 
 playSound(
-"scene05/scene05_instruction.mp3"
+instructionFile
 );
 
+
 };
 
 };
+
+const changeLanguage = (lang:"en"|"bm") => {
+
+
+setLanguage(lang);
+
+
+// Tukar bubble intro
+
+setSpeechText(
+dialogue[lang].intro
+);
+
+
+// main intro ikut bahasa
+
+const introFile =
+lang === "bm"
+?
+"scene05/scene05_intro_bm.mp3"
+:
+"scene05/scene05_intro.mp3";
+
+
+const instructionFile =
+lang === "bm"
+?
+"scene05/scene05_instruction_bm.mp3"
+:
+"scene05/scene05_instruction.mp3";
+
+
+
+const introAudio = new Audio(
+`/sounds/${introFile}`
+);
+
+
+introAudio.volume = 0.6;
+
+
+introAudio.play()
+.catch(()=>{});
+
+
+
+// bila intro habis
+
+introAudio.onended = ()=>{
+
+
+setSpeechText(
+dialogue[lang].help
+);
+
+
+// main instruction
+
+playSound(
+instructionFile
+);
+
+
+};
+
+
+};
+
 
 
 // LETAK SINI
 const playTryAgain = () => {
 
-setSpeechText(
-"Good effort! Let's keep making our city greener! 🌱"
+
+const tryAgainFile =
+language === "bm"
+?
+"scene05/scene05_try_again_bm.mp3"
+:
+"scene05/scene05_try_again.mp3";
+
+
+stopDialogueAudio();
+
+
+const audio = new Audio(
+`/sounds/${tryAgainFile}`
 );
 
-playSound(
-"scene05/scene05_try_again.mp3"
-);
+
+dialogueAudio.current = audio;
+
+
+audio.volume = 0.5;
+
+
+audio.play()
+.catch(()=>{});
+
+
+audio.onended = ()=>{
+
+dialogueAudio.current = null;
 
 };
 
 
-useEffect(() => {
+};
 
-playSceneIntro();
 
-}, []);
-
-  const [speechText, setSpeechText] = useState(
+const [speechText, setSpeechText] = useState(
 "Let's make our city greener! 🌱"
 );
-
 
   useEffect(() => {
 
@@ -1101,15 +1342,126 @@ playSceneIntro();
 // RESULT SCREEN VALUES
 // ==============================
 
+const dialogue = {
+
+en: {
+
+intro:
+"Let's make our city greener! 🌱",
+
+instruction:
+"Pick a plant and drag it to the matching spot!",
+
+help:
+"Can you please help me? Match the same plants, then drag and drop them into the correct spots! 🌱",
+
+chooseLanguage:
+"Choose Language",
+
+play:
+"LET'S PLAY!",
+
+completeTitle:
+"GREEN CITY COMPLETE!",
+
+complete:
+"Good effort! Let's keep making our city greener!",
+
+plantsGrown:
+"PLANTS GROWN!",
+
+replay:
+"REPLAY",
+
+next:
+"NEXT",
+
+tree:
+"Wonderful! Trees help absorb rainwater and keep our city green!",
+
+grass:
+"Great! Grass helps the soil absorb rainwater!",
+
+flower:
+"Beautiful! Flowers make our city greener and brighter!",
+
+wrong:
+"Oops! Try another matching spot!",
+
+time:
+"Ten seconds left! Keep going!"
+
+},
+
+
+bm: {
+
+intro:
+"Jom jadikan bandar kita lebih hijau! 🌱",
+
+instruction:
+"Pilih tumbuhan dan tarik ke tempat padanan yang betul! 🌱",
+
+help:
+"Mari bantu saya! Padankan tumbuhan yang sama, kemudian seret dan letakkan di tempat yang betul! 🌱",
+
+chooseLanguage:
+"Pilih Bahasa",
+
+play:
+"MARI BERMAIN!",
+
+completeTitle:
+"BANDAR HIJAU SELESAI!",
+
+complete:
+"Cubaan yang baik! Jom terus jadikan bandar kita lebih hijau!",
+
+plantsGrown:
+"TUMBUHAN DITANAM!",
+
+replay:
+"MAIN SEMULA",
+
+next:
+"SETERUSNYA",
+
+tree:
+"Hebat! Pokok membantu tanah menyerap air hujan dan menjadikan bandar kita lebih hijau!",
+
+grass:
+"Bagus! Rumput membantu tanah menyerap air hujan!",
+
+flower:
+"Cantiknya! Bunga menjadikan bandar kita lebih hijau dan ceria!",
+
+wrong:
+"Oops! Cuba tempat lain!",
+
+time:
+"Tinggal 10 saat! Teruskan!"
+
+}
+};
+
+useEffect(() => {
+
+playSceneIntro();
+
+}, []);
+
+
 const resultMessage: string =
   greenScore >= 15
-    ? "Amazing! You made our city greener!"
+    ? dialogue[language ?? "en"].complete
     : greenScore >= 8
-    ? "Great job! Our city is now healthier!"
-    : "Good effort! Let's keep making our city greener!";
+    ? dialogue[language ?? "en"].complete
+    : dialogue[language ?? "en"].complete;
 
+    
 
 return (
+
 
 
     <div
@@ -1160,6 +1512,135 @@ touch-manipulation
 
     >
 
+{/* LANGUAGE BUTTON */}
+
+{
+!gameStarted &&
+!gameFinished &&
+showStartButton &&
+(
+<div
+className="
+absolute
+top-5
+right-6
+z-[999]
+flex
+items-center
+gap-1
+bg-white/90
+backdrop-blur-md
+rounded-full
+p-1
+shadow-xl
+border-2
+border-white
+"
+>
+
+
+{/* ENG */}
+
+<button
+
+onClick={()=>{
+
+playClickSound();
+
+changeLanguage("en");
+
+}}
+
+className={`
+px-5
+py-2
+rounded-full
+
+font-black
+text-sm
+
+outline-none
+focus:outline-none
+focus:ring-0
+
+transition-all
+duration-200
+
+${
+language === "en"
+
+?
+
+"bg-blue-500 text-white scale-105 shadow-md"
+
+:
+
+"bg-transparent text-blue-600"
+
+}
+
+`}
+
+>
+
+ENG
+
+</button>
+
+
+
+{/* BM */}
+
+<button
+
+onClick={()=>{
+
+playClickSound();
+
+changeLanguage("bm");
+
+}}
+
+className={`
+px-5
+py-2
+rounded-full
+
+font-black
+text-sm
+outline-none
+focus:outline-none
+focus:ring-0
+
+transition-all
+duration-200
+
+
+${
+language === "bm"
+
+?
+
+"bg-orange-400 text-white scale-105 shadow-md"
+
+:
+
+"bg-transparent text-orange-500"
+
+}
+
+`}
+
+>
+
+BM
+
+</button>
+
+
+</div>
+)
+}
 
       {/* Background */}
       <img
@@ -1670,6 +2151,7 @@ gap-4
 
 
 
+
 {/* TIMER */}
 
 <div
@@ -2003,17 +2485,14 @@ to-blue-50
 
                   {/* Name */}
                   <div
-                    className="
-    text-green-600
-    font-bold
-    text-xs
-    mb-1Help Tippy make the city greener! 🌱
-
-Match the same plants,
-then drag and drop them
-into the correct spots!
-    "
-                  >
+className="
+text-green-600
+font-bold
+text-xs
+mb-1
+"
+>
+                  
                     TIPPY
                   </div>
 
@@ -2073,11 +2552,23 @@ ${
  countdown === null &&
  !showGo && (
 
+  
+
                 <button
 
                   onClick={() => {
 
 playClickSound();
+
+stopDialogueAudio();
+
+if(currentSound.current){
+
+currentSound.current.pause();
+
+currentSound.current.currentTime = 0;
+
+}
 
 setShowStartButton(false);
 
@@ -2163,7 +2654,7 @@ gap-2
 
                 >
 
-                 🌱 LET'S PLAY!
+                 🌱 {dialogue[language ?? "en"].play}
 
                 </button>
 
@@ -2546,7 +3037,12 @@ ${selectedPlant === "flower"
             tracking-wide
           "
         >
-          COMPLETE!
+          {language === "bm"
+?
+"TAHNIAH!"
+:
+"COMPLETE!"
+}
         </div>
 
 
@@ -2563,6 +3059,14 @@ ${selectedPlant === "flower"
             mt-1
           "
         >
+
+          <span className="text-[42px]">
+            ⭐
+          </span>
+
+          <span className="text-[42px]">
+            ⭐
+          </span>
 
           <span className="text-[42px]">
             ⭐
@@ -2593,7 +3097,7 @@ ${selectedPlant === "flower"
             text-green-600
           "
         >
-          GREEN CITY COMPLETE!
+          {dialogue[language ?? "en"].completeTitle}
         </h1>
 
 
@@ -2701,7 +3205,7 @@ ${selectedPlant === "flower"
                 text-green-700
               "
             >
-              PLANTS GROWN!
+              {dialogue[language ?? "en"].plantsGrown}
             </div>
 
           </div>
@@ -2749,6 +3253,7 @@ ${selectedPlant === "flower"
 
               setGamePaused(false);
               setShowStartButton(true);
+              setLanguageLocked(true);
 
               setTimeLeft(60);
 
@@ -2780,6 +3285,8 @@ setTippyConfig({
 });
 
               spawnIndex.current = 0;
+
+              stopDialogueAudio();
 
              playTryAgain();
 
@@ -2815,7 +3322,7 @@ setShowGo(false);
               duration-150
             "
           >
-            REPLAY
+            {dialogue[language ?? "en"].replay}
           </button>
 
 
@@ -2857,7 +3364,7 @@ setShowGo(false);
               duration-150
             "
           >
-            NEXT
+            {dialogue[language ?? "en"].next}
           </button>
 
         </div>
