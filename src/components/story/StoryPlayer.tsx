@@ -241,12 +241,13 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
             onPhaseChange={(p) => setScene2Phase(p)}
             isDevMode={isDevMode}
             onComplete={() => {
-              setActiveScene('welcome');
+              setActiveScene('scene05');
+              setScene5ResetKey((k) => k + 1);
             }}
           />
         )}
-        
-                {activeScene === 'scene05' && (
+
+        {activeScene === 'scene05' && (
           <Scene05
             key={`scene5-${scene5ResetKey}`}
             onComplete={() => {
