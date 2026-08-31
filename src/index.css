@@ -13,6 +13,12 @@
     background-color: #020617;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+
+    #root {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
   }
 }
 
@@ -274,27 +280,26 @@ opacity:0;
 }
 
 }
-
 @keyframes walk {
 
 0% {
-transform: translateY(0px);
+translate: 0 0;
 }
 
 25% {
-transform: translateY(-3px);
+translate: 0 -3px;
 }
 
 50% {
-transform: translateY(0px);
+translate: 0 0;
 }
 
 75% {
-transform: translateY(3px);
+translate: 0 3px;
 }
 
 100% {
-transform: translateY(0px);
+translate: 0 0;
 }
 
 }

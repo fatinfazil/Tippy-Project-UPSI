@@ -280,6 +280,7 @@ onEnded();
 };
 
   const [worldSpeed, setWorldSpeed] = useState(0.5);
+  const [backgroundX, setBackgroundX] = useState(0);
 
   const [gameFinished, setGameFinished] = useState(false);
 
@@ -790,7 +791,7 @@ playSound(
       setIsHolding(true);
 
 
-    }, 300);
+    }, 150);
 
 
   };
@@ -855,18 +856,17 @@ dialogue[language ?? "en"].instruction
   const [showGo, setShowGo] = useState(false);
 
 // Walking position
-const [tippyConfig, setTippyConfig] = useState({
-  x:-1.7,
-  y:37,
-  size:500
-});
+const tippyConfig = {
+x:11,
+y:43,
+size:300
+};
 
 
-// Talking position (Intro + Replay)
 const talkingTippyConfig = {
-  x: 8.5,
-  y: 30,
-  size: 350
+x:12,
+y:30,
+size:300
 };
 
   useEffect(()=>{
@@ -1001,6 +1001,24 @@ return ()=>clearTimeout(speedUp);
     const movement = setInterval(() => {
 
 
+      // PARALLAX BACKGROUND
+   setBackgroundX(prev => {
+
+const next = prev - (worldSpeed * 3);
+
+
+if(next <= -window.innerWidth){
+
+return 0;
+
+}
+
+
+return next;
+
+});
+
+
       setActiveTargets(prev => {
 
 
@@ -1089,16 +1107,16 @@ const [dialogueConfig, setDialogueConfig] = useState(() => {
 });
 
 const introDialogueConfig = {
-  x: 5,
-  y: 15,
-  width: 450
+x:7.5,
+y:14,
+width:420
 };
 
 
 const gameDialogueConfig = {
-  x: 2,
-  y: 20,
-  width: 420
+x:8,
+y:24,
+width:380
 };
 
 const [tippyTalking, setTippyTalking] = useState(true);
@@ -1266,6 +1284,7 @@ dialogueAudio.current = audio;
 audio.volume = 0.5;
 
 
+
 audio.play()
 .catch(()=>{});
 
@@ -1386,7 +1405,7 @@ flower:
 "Beautiful! Flowers make our city greener and brighter!",
 
 wrong:
-"Oops! Try another matching spot!",
+"Oops! Try another spot!",
 
 time:
 "Ten seconds left! Keep going!"
@@ -1446,6 +1465,10 @@ time:
 
 useEffect(() => {
 
+setSpeechText(
+  dialogue[language].intro
+);
+
 playSceneIntro();
 
 }, []);
@@ -1461,6 +1484,28 @@ const resultMessage: string =
     
 
 return (
+
+<div
+className="
+fixed
+left-0
+right-0
+bottom-0
+top-[84px]
+
+overflow-hidden
+bg-none
+"
+>
+
+<div
+className="
+absolute
+inset-0
+overflow-hidden
+"
+>
+
 
 
 
@@ -1500,17 +1545,23 @@ return (
 
       }}
 
+      style={{
+ touchAction:"none"
+}}
 
 
-      className="
+
+className="
+relative
 w-full
 h-full
-relative
 overflow-hidden
-touch-manipulation
+touch-none
+pt-[84px]
 "
+>
 
-    >
+  
 
 {/* LANGUAGE BUTTON */}
 
@@ -1522,16 +1573,23 @@ showStartButton &&
 <div
 className="
 absolute
-top-5
+top-6
 right-6
+
+sm:top-10
+sm:right-10
+
 z-[999]
+
 flex
 items-center
 gap-1
+
 bg-white/90
 backdrop-blur-md
 rounded-full
 p-1
+
 shadow-xl
 border-2
 border-white
@@ -1642,59 +1700,80 @@ BM
 )
 }
 
-      {/* Background */}
-      <img
-        src="/bg/bg_scene5_game.png"
-        alt="Scene 5 Background"
-        className="
-absolute
-inset-0
-w-full
-h-full
-object-cover
-pointer-events-none
-"
-      />
-
-      {/* MOVING CLOUDS */}
+{/* MOVING BACKGROUND */}
 
 <div
 className="
 absolute
-top-10
-
-text-6xl
-
-opacity-80
-
-animate-cloud
-
-pointer-events-none
-
-z-10
+inset-0
+top-0
+z-0
+overflow-hidden
 "
 >
-☁️
+
+<div
+className="
+absolute
+inset-0
+z-0
+overflow-hidden
+"
+>
+
+<div
+className="
+absolute
+top-0
+left-0
+h-full
+w-[200%]
+"
+style={{
+
+backgroundImage:
+"url('/bg/bg_scene5_game.png')",
+
+backgroundSize:
+"50% 100%",
+
+backgroundRepeat:
+"repeat-x",
+
+backgroundPosition:
+"left center",
+
+transform:
+`translateX(${backgroundX}px)`
+
+}}
+/>
+
+
+<div
+className="
+absolute
+top-0
+left-full
+h-full
+w-full
+"
+style={{
+backgroundImage:
+"url('/bg/bg_scene5_game.png')",
+
+backgroundSize:"cover",
+
+backgroundRepeat:"no-repeat",
+
+backgroundPosition:"center"
+}}
+/>
+
+
 </div>
 
 
-<div
-className="
-absolute
-top-32
-
-text-5xl
-
-opacity-70
-
-animate-cloud-slow
-
-pointer-events-none
-
-z-10
-"
->
-☁️
 </div>
 
 
@@ -1753,8 +1832,8 @@ z-10
             className="
 absolute
 z-20
-w-32
-h-32
+w-[clamp(70px,10vw,128px)]
+h-[clamp(70px,10vw,128px)]
 object-contain
 opacity-50
 grayscale
@@ -1766,7 +1845,7 @@ grayscale
 
               top: `${target.y}%`,
 
-              transform: "translate(-50%,-50%)"
+              transform: "translate(-50%,-75%)"
 
             }}
 
@@ -1848,8 +1927,8 @@ top:`${scoreStar.y}%`
 absolute
 z-50
 
-w-32
-h-32
+w-[clamp(70px,10vw,128px)]
+h-[clamp(70px,10vw,128px)]
 
 object-contain
 
@@ -1861,7 +1940,7 @@ object-contain
 
               top: `${plant.y}%`,
 
-              transform: "translate(-50%,-50%)"
+              transform: "translate(-50%,-75%)"
 
             }}
 
@@ -1874,9 +1953,8 @@ object-contain
 
 
 {
-!tippyHidden && (
+!tippyHidden && !gameFinished && (
       <img
-
        src={
   tippyTalking
     ? "/characters/tippy/tippy-talking.gif"
@@ -1940,8 +2018,8 @@ tippyWalking && !tippyTalking
 absolute
 z-[80]
 
-w-32
-h-32
+w-[clamp(70px,10vw,128px)]
+h-[clamp(70px,10vw,128px)]
 
 object-contain
 
@@ -2452,8 +2530,8 @@ countdown
                 <div
 
                   className="
-  absolute
-  z-40
+absolute
+z-[400]
  bg-gradient-to-b
 from-white
 to-blue-50
@@ -2507,9 +2585,9 @@ leading-relaxed
 ${
 !gameStarted
 ?
-"text-lg"
+"text-base"
 :
-"text-lg"
+"text-sm"
 }
 
 `}
@@ -2590,21 +2668,21 @@ setSpeechText("");
 id:0,
 type:"tree",
 x:75,
-y:82
+y:78
 },
 
 {
 id:1,
 type:"grass",
 x:95,
-y:82
+y:78
 },
 
 {
 id:2,
 type:"flower",
 x:115,
-y:82
+y:78
 }
 
 ]);
@@ -2616,7 +2694,9 @@ y:82
                   className="
 absolute
 
-bottom-16
+bottom-[90px]
+
+sm:bottom-[105px]
 left-1/2
 -translate-x-1/2
 
@@ -2671,9 +2751,13 @@ gap-2
 
                   className="
 absolute
-top-5
+
+top-10
+md:top-5
+
 left-1/2
 -translate-x-1/2
+
 
 z-[999]
 "
@@ -2718,8 +2802,8 @@ mb-2
 
                    <div
   className="
-    w-24
-    h-24
+    w-[clamp(60px,8vw,96px)]
+h-[clamp(60px,8vw,96px)]
 
     flex
     items-center
@@ -2753,13 +2837,13 @@ mb-2
 
                         onPointerDown={(e) => {
 
-                          e.currentTarget.setPointerCapture(
-                            e.pointerId
-                          );
+e.currentTarget.releasePointerCapture?.(
+e.pointerId
+);
 
-                          startHoldPlant("tree");
+startHoldPlant("tree");
 
-                        }}
+}}
                         onPointerUp={cancelHold}
 
                         onPointerLeave={cancelHold}
@@ -2796,8 +2880,8 @@ ${selectedPlant === "tree"
 
                     <div
   className="
-    w-24
-    h-24
+ w-[clamp(60px,8vw,96px)]
+h-[clamp(60px,8vw,96px)]
 
     flex
     items-center
@@ -2829,15 +2913,15 @@ ${selectedPlant === "tree"
 
                         draggable={false}
 
-                        onPointerDown={(e) => {
+                       onPointerDown={(e) => {
 
-                          e.currentTarget.setPointerCapture(
-                            e.pointerId
-                          );
+e.currentTarget.releasePointerCapture?.(
+e.pointerId
+);
 
-                          startHoldPlant("grass");
+startHoldPlant("grass");
 
-                        }}
+}}
 
                         onPointerUp={cancelHold}
 
@@ -2877,8 +2961,8 @@ ${selectedPlant === "grass"
 
                    <div
   className="
-    w-24
-    h-24
+    w-[clamp(60px,8vw,96px)]
+h-[clamp(60px,8vw,96px)]
 
     flex
     items-center
@@ -2910,15 +2994,15 @@ ${selectedPlant === "grass"
 
                         draggable={false}
 
-                        onPointerDown={(e) => {
+                       onPointerDown={(e) => {
 
-                          e.currentTarget.setPointerCapture(
-                            e.pointerId
-                          );
+e.currentTarget.releasePointerCapture?.(
+e.pointerId
+);
 
-                          startHoldPlant("flower");
+startHoldPlant("flower");
 
-                        }}
+}}
 
                         onPointerUp={cancelHold}
 
@@ -2961,7 +3045,7 @@ ${selectedPlant === "flower"
 
             }
 
-            {
+           {
   gameFinished && (
 
     <div
@@ -2975,7 +3059,6 @@ ${selectedPlant === "flower"
         justify-center
 
         bg-black/35
-        backdrop-blur-[2px]
       "
     >
 
@@ -2985,8 +3068,9 @@ ${selectedPlant === "flower"
         className="
           relative
 
-          w-[390px]
-          max-w-[90vw]
+         w-[520px]
+max-w-[90%]
+       
 
           bg-[#fffaf3]
 
@@ -3060,23 +3144,23 @@ ${selectedPlant === "flower"
           "
         >
 
-          <span className="text-[42px]">
+          <span className="text-[clamp(20px,3vw,42px)]">
             ⭐
           </span>
 
-          <span className="text-[42px]">
+          <span className="text-[clamp(20px,3vw,42px)]">
             ⭐
           </span>
 
-          <span className="text-[42px]">
+          <span className="text-[clamp(20px,3vw,42px)]">
             ⭐
           </span>
 
-          <span className="text-[42px]">
+          <span className="text-[clamp(20px,3vw,42px)]">
             ⭐
           </span>
 
-          <span className="text-[42px]">
+          <span className="text-[clamp(20px,3vw,42px)]">
             ⭐
           </span>
 
@@ -3089,7 +3173,7 @@ ${selectedPlant === "flower"
           className="
             mt-3
 
-            text-[24px]
+            text-[clamp(14px,2vw,24px)]
             leading-tight
 
             font-black
@@ -3128,8 +3212,9 @@ ${selectedPlant === "flower"
 
             mx-auto
 
-            w-[210px]
-            h-[105px]
+           w-[55%]
+h-auto
+aspect-[2/1]
 
             flex
             items-center
@@ -3253,7 +3338,12 @@ ${selectedPlant === "flower"
 
               setGamePaused(false);
               setShowStartButton(true);
-              setLanguageLocked(true);
+
+setSpeechText(
+dialogue[language ?? "en"].complete
+);
+
+setLanguageLocked(true);
 
               setTimeLeft(60);
 
@@ -3277,14 +3367,9 @@ ${selectedPlant === "flower"
 
               setTippyTalking(true);
 setTippyWalking(false);
+setTippyHidden(false);
 
-setTippyConfig({
-   x: -3,
-  y: 37,
-  size: 500 
-});
-
-              spawnIndex.current = 0;
+         spawnIndex.current = 0;
 
               stopDialogueAudio();
 
@@ -3296,9 +3381,9 @@ setShowGo(false);
             }}
 
             className="
-              w-[150px]
-              h-[54px]
-
+             w-[40%]
+h-auto
+py-3
               rounded-[18px]
 
               bg-gradient-to-b
@@ -3339,8 +3424,9 @@ setShowGo(false);
             }}
 
             className="
-              w-[150px]
-              h-[54px]
+             w-[40%]
+h-auto
+py-3
 
               rounded-[18px]
 
@@ -3395,8 +3481,11 @@ pointer-events-auto
 )
 }
 
-          </div>
+                  </div>
+</div>
 
-        );
+</div>
+
+);
 
 };
