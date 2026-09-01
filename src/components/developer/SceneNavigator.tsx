@@ -11,22 +11,46 @@ import {
   Brain,
 } from 'lucide-react';
 
-// Scene 8 has been added here
+// ============================================
+// ACTIVE SCENE
+// ============================================
+
 export type ActiveScene =
   | 'welcome'
   | 'scene01'
   | 'scene02'
+  | 'scene05'
   | 'scene08';
+
+// ============================================
+// PROPS
+// ============================================
 
 interface SceneNavigatorProps {
   activeScene: ActiveScene;
+
   scene1Phase: StoryPhase;
+
   scene2Phase: Scene02Phase;
-  onSelectScene: (scene: ActiveScene) => void;
-  onSelectScene1Phase: (phase: StoryPhase) => void;
-  onSelectScene2Phase: (phase: Scene02Phase) => void;
+
+  onSelectScene: (
+    scene: ActiveScene
+  ) => void;
+
+  onSelectScene1Phase: (
+    phase: StoryPhase
+  ) => void;
+
+  onSelectScene2Phase: (
+    phase: Scene02Phase
+  ) => void;
+
   onJumpScene2Interaction: () => void;
 }
+
+// ============================================
+// COMPONENT
+// ============================================
 
 export const SceneNavigator: React.FC<
   SceneNavigatorProps
@@ -41,6 +65,7 @@ export const SceneNavigator: React.FC<
 }) => {
   return (
     <div className="space-y-3 font-mono text-xs">
+
       {/* ====================================== */}
       {/* SCENE NAVIGATOR HEADER */}
       {/* ====================================== */}
@@ -59,7 +84,9 @@ export const SceneNavigator: React.FC<
       >
         <Compass className="w-4 h-4 text-sky-400" />
 
-        <span>Scene Navigator</span>
+        <span>
+          Scene Navigator
+        </span>
       </div>
 
       {/* ====================================== */}
@@ -84,7 +111,7 @@ export const SceneNavigator: React.FC<
         <div
           className="
             grid
-            grid-cols-4
+            grid-cols-5
             gap-1
             p-1
             rounded-xl
@@ -93,6 +120,7 @@ export const SceneNavigator: React.FC<
             bg-slate-950
           "
         >
+
           {/* WELCOME */}
 
           <button
@@ -171,7 +199,33 @@ export const SceneNavigator: React.FC<
             Scene 2
           </button>
 
-          {/* SCENE 8 QUIZ */}
+          {/* SCENE 5 */}
+
+          <button
+            type="button"
+            onClick={() =>
+              onSelectScene('scene05')
+            }
+            className={`
+              py-1.5
+              px-2
+              rounded-lg
+              text-[11px]
+              font-bold
+              text-center
+              transition
+              cursor-pointer
+              ${
+                activeScene === 'scene05'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }
+            `}
+          >
+            Scene 5
+          </button>
+
+          {/* SCENE 8 */}
 
           <button
             type="button"
@@ -196,6 +250,7 @@ export const SceneNavigator: React.FC<
           >
             Scene 8
           </button>
+
         </div>
       </div>
 
@@ -242,6 +297,9 @@ export const SceneNavigator: React.FC<
           {activeScene === 'scene02' &&
             'Scene 2 (Garden)'}
 
+          {activeScene === 'scene05' &&
+            'Scene 5 (Green City)'}
+
           {activeScene === 'scene08' &&
             'Scene 8 (Quiz)'}
         </span>
@@ -276,6 +334,9 @@ export const SceneNavigator: React.FC<
           </label>
 
           <div className="grid grid-cols-3 gap-1">
+
+            {/* INTRO VIDEO */}
+
             <button
               type="button"
               onClick={() =>
@@ -304,8 +365,12 @@ export const SceneNavigator: React.FC<
             >
               <Film className="w-3 h-3" />
 
-              <span>Intro Video</span>
+              <span>
+                Intro Video
+              </span>
             </button>
+
+            {/* STORY */}
 
             <button
               type="button"
@@ -336,8 +401,12 @@ export const SceneNavigator: React.FC<
             >
               <MessageSquare className="w-3 h-3" />
 
-              <span>Story</span>
+              <span>
+                Story
+              </span>
             </button>
+
+            {/* INTERACTION */}
 
             <button
               type="button"
@@ -368,8 +437,11 @@ export const SceneNavigator: React.FC<
             >
               <Zap className="w-3 h-3" />
 
-              <span>Interaction</span>
+              <span>
+                Interaction
+              </span>
             </button>
+
           </div>
         </div>
       )}
@@ -403,10 +475,15 @@ export const SceneNavigator: React.FC<
           </label>
 
           <div className="grid grid-cols-2 gap-1.5">
+
+            {/* VIDEO */}
+
             <button
               type="button"
               onClick={() =>
-                onSelectScene2Phase('video')
+                onSelectScene2Phase(
+                  'video'
+                )
               }
               className={`
                 flex
@@ -429,8 +506,12 @@ export const SceneNavigator: React.FC<
             >
               <Film className="w-3.5 h-3.5" />
 
-              <span>Video</span>
+              <span>
+                Video
+              </span>
             </button>
+
+            {/* INTERACTION */}
 
             <button
               type="button"
@@ -452,7 +533,8 @@ export const SceneNavigator: React.FC<
                 transition
                 cursor-pointer
                 ${
-                  scene2Phase === 'interaction'
+                  scene2Phase ===
+                  'interaction'
                     ? 'bg-emerald-600 text-white shadow'
                     : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
                 }
@@ -460,8 +542,11 @@ export const SceneNavigator: React.FC<
             >
               <Zap className="w-3.5 h-3.5" />
 
-              <span>Interaction</span>
+              <span>
+                Interaction
+              </span>
             </button>
+
           </div>
         </div>
       )}
@@ -488,7 +573,37 @@ export const SceneNavigator: React.FC<
         >
           <Brain className="w-4 h-4" />
 
-          <span>Scene 8 Quiz</span>
+          <span>
+            Scene 8 Quiz
+          </span>
+        </div>
+      )}
+
+      {/* ====================================== */}
+      {/* SCENE 5 INFORMATION */}
+      {/* ====================================== */}
+
+      {activeScene === 'scene05' && (
+        <div
+          className="
+            flex
+            items-center
+            justify-center
+            gap-2
+            p-2.5
+            rounded-xl
+            border
+            border-emerald-800
+            bg-emerald-950/40
+            text-emerald-300
+            font-bold
+          "
+        >
+          <Sparkles className="w-4 h-4" />
+
+          <span>
+            Scene 5 Green City
+          </span>
         </div>
       )}
 
@@ -497,11 +612,14 @@ export const SceneNavigator: React.FC<
       {/* ====================================== */}
 
       <div className="space-y-2 pt-1">
+
         {/* DIRECT SCENE 2 INTERACTION */}
 
         <button
           type="button"
-          onClick={onJumpScene2Interaction}
+          onClick={
+            onJumpScene2Interaction
+          }
           className="
             inline-flex
             items-center
@@ -585,6 +703,7 @@ export const SceneNavigator: React.FC<
             Direct Jump: Scene 8 → Quiz
           </span>
         </button>
+
       </div>
     </div>
   );
