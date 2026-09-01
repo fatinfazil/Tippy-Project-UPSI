@@ -1,0 +1,15 @@
+node_modules/
+build/
+dist/
+coverage/
+data/
+.DS_Store
+*.log
+# Secrets — never commit real .env files (templates OK)
+.env
+.env.*
+!.env.example
+.venv/
+telegram/.venv/
+__pycache__/
+*.py[cod]

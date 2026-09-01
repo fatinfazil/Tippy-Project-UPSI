@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #020617;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Helper for short landscape screens (e.g. phones in landscape) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .short-landscape-hide {
+    display: none !important;
+  }
+  .short-landscape-compact-py {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  .short-landscape-text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  .short-landscape-icon-sm {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+}
+
+/* Portrait orientation rule for overlay */
+@media (orientation: portrait) {
+  .portrait-overlay-flex {
+    display: flex !important;
+  }
+}
+@media (orientation: landscape) {
+  .portrait-overlay-flex {
+    display: none !important;
+  }
+}
+
+/* Elements that should only be visible in landscape orientation */
+@media (orientation: portrait) {
+  .landscape-only {
+    display: none !important;
+  }
+}
+
+/* Playful POP animation for kids UI elements (scale 0 -> 1.1 -> 1.0 in 150ms) */
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pop-in {
+  animation: popIn 150ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Smooth pop-in animation without bounce overshoot */
+@keyframes popInSmooth {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pop-in-smooth {
+  animation: popInSmooth 350ms ease-out forwards;
+}
+
+/* Fade in with scale and bounce for Scene 1 Next button */
+@keyframes fadeInBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-bounce {
+  animation: fadeInBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes trashArc {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(65px, -50px) rotate(180deg);
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(130px, 15px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-trashArc {
+  animation: trashArc 1.5s infinite ease-in-out;
+}
