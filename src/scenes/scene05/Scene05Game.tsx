@@ -3,10 +3,20 @@ import {
   useEffect,
   useRef
 } from "react";
+
+import {
+getDeviceType,
+deviceConfig
+} from "../../config/deviceConfig";
+
 import { Scene05DeveloperPanel } from "./Scene05DeveloperPanel";
 
 export const Scene05Game = () => {
 
+  const device = getDeviceType();
+  console.log("DEVICE:", device);
+
+  const responsive = deviceConfig[device];
   const spawnIndex = useRef(0);
 
   const countdownAudio = useRef<HTMLAudioElement | null>(null);
@@ -129,14 +139,16 @@ const stopDialogueAudio = () => {
 
 };
 
-const finishGame = () => {
 
 
-  // hentikan semua suara Tippy
+const finishGame = async (
+  finalScore:number
+) => {
+
+
   stopDialogueAudio();
 
 
-  // hentikan sound semasa
   if(currentSound.current){
 
     currentSound.current.pause();
@@ -146,7 +158,6 @@ const finishGame = () => {
   }
 
 
-  // hentikan countdown
   if(countdownAudio.current){
 
     countdownAudio.current.pause();
@@ -156,8 +167,8 @@ const finishGame = () => {
   }
 
 
-  // hentikan background
   stopBackgroundMusic();
+
 
 
   setSpeechText(
@@ -169,11 +180,71 @@ const finishGame = () => {
   setTippyWalking(false);
 
 
-  setGameFinished(true);
-  setGameStarted(false);
+ // 1. Ambil score lama dalam database
+const oldHighest = await getHighestScore();
 
 
-  // celebration sahaja
+// 2. Banding current score dengan database
+const finalHighest = Math.max(
+  finalScore,
+  oldHighest
+);
+
+console.log(
+  "CURRENT SCORE:",
+  finalScore
+);
+
+console.log(
+  "OLD HIGH SCORE:",
+  oldHighest
+);
+
+console.log(
+  "NEW HIGH SCORE:",
+  finalHighest
+);
+
+
+// 3. Paparkan highest score
+setHighestScore(finalHighest);
+setDisplayScore(finalHighest);
+
+
+// Check sama ada pecah rekod
+if (finalScore > oldHighest) {
+
+  setIsNewBestScore(true);
+
+}
+else {
+
+  setIsNewBestScore(false);
+
+}
+
+console.log(
+  "DISPLAY SCORE:",
+  finalHighest
+);
+
+
+// 4. Simpan hanya jika score baru lebih tinggi
+if (finalScore > oldHighest) {
+
+  await saveGameScore(finalScore);
+
+}
+
+
+// STOP GAME COMPLETELY
+setGameStarted(false);
+setGameFinished(true);
+setDraggingPlant(null);
+setSelectedPlant(null);
+setIsHolding(false);
+
+
   setTimeout(()=>{
 
     playSound(
@@ -182,6 +253,17 @@ const finishGame = () => {
 
   },700);
 
+
+};
+
+
+
+
+const goNextScene = () => {
+
+  playClickSound();
+
+  console.log("NEXT SCENE NOT AVAILABLE YET");
 
 };
 
@@ -219,6 +301,67 @@ const finishGame = () => {
   const [placedPlants, setPlacedPlants] = useState<any[]>([]);
 
   const [greenScore, setGreenScore] = useState(0);
+  const greenScoreRef = useRef(0);
+
+  const [highestScore, setHighestScore] = useState(0);
+  const [displayScore, setDisplayScore] = useState(0);
+  const [isNewBestScore, setIsNewBestScore] = useState(false);
+  const getHighestScore = async (): Promise<number> => {
+
+  const accessCode = getAccessCode();
+
+  if (!accessCode) return 0;
+
+
+  try {
+
+    const response = await fetch(
+      `/api/game/scores?access_code=${accessCode}&game_id=${GAME_ID}`
+    );
+
+
+    const data = await response.json();
+
+    console.log(
+ "DATABASE SCORE DATA:",
+ JSON.stringify(data,null,2)
+);
+
+
+    if(
+      data?.scores &&
+      data.scores.length > 0
+    ){
+
+      const highest = Math.max(
+        ...data.scores.map(
+          (item:any)=>item.score
+        )
+      );
+
+
+      setHighestScore(highest);
+
+
+      return highest;
+
+    }
+
+
+  }
+  catch(error){
+
+    console.error(
+      "FAILED GET HIGH SCORE",
+      error
+    );
+
+  }
+
+
+  return 0;
+
+};
   
   const [lives, setLives] = useState(3);
  const [successAnimation, setSuccessAnimation] = useState<{
@@ -416,22 +559,7 @@ const saveGameScore = async (
 
 };
 
-// STEP 5 - AUTO SAVE SCORE BILA GAME TAMAT
-useEffect(() => {
 
-  if (!gameFinished) {
-    return;
-  }
-
-  if (scoreSavedRef.current) {
-    return;
-  }
-
-  scoreSavedRef.current = true;
-
-  saveGameScore(greenScore);
-
-}, [gameFinished, greenScore]);
 
   const plantQueue = [
     "tree",
@@ -594,11 +722,14 @@ setTimeout(() => {
 
 });
 
-      setGreenScore(prev => prev + 1);
+      setGreenScore(prev => {
 
-      setSuccessAnimation({
-  x: target.x,
-  y: target.y
+ const newScore = prev + 1;
+
+ greenScoreRef.current = newScore;
+
+ return newScore;
+
 });
 
 
@@ -855,18 +986,25 @@ dialogue[language ?? "en"].instruction
 
   const [showGo, setShowGo] = useState(false);
 
-// Walking position
 const tippyConfig = {
-x:11,
-y:43,
-size:300
+
+x:responsive.tippyX,
+
+y:responsive.tippyY,
+
+size:responsive.tippySize
+
 };
 
 
-const talkingTippyConfig = {
-x:12,
-y:30,
-size:300
+const talkingTippyConfig={
+
+x:responsive.talkingTippyX,
+
+y:responsive.talkingTippyY,
+
+size:responsive.talkingTippySize
+
 };
 
   useEffect(()=>{
@@ -891,10 +1029,12 @@ size:300
 
        if (prev <= 1) {
 
-
 clearInterval(timer);
 
-finishGame();
+
+finishGame(
+  greenScoreRef.current
+);
 
 return 0;
 
@@ -1077,7 +1217,7 @@ return next;
 
       );
 
-    }, 50);
+  }, 60); 
 
 
     return () => clearInterval(movement);
@@ -1106,18 +1246,16 @@ const [dialogueConfig, setDialogueConfig] = useState(() => {
 
 });
 
-const introDialogueConfig = {
-x:7.5,
-y:14,
-width:420
+const introDialogueConfig={
+
+x:6,
+
+y:20,
+
+width:responsive.dialogueWidth
+
 };
 
-
-const gameDialogueConfig = {
-x:8,
-y:24,
-width:380
-};
 
 const [tippyTalking, setTippyTalking] = useState(true);
 const [tippyWalking, setTippyWalking] = useState(false);
@@ -1387,7 +1525,10 @@ complete:
 "Good effort! Let's keep making our city greener!",
 
 plantsGrown:
-"PLANTS GROWN!",
+"BEST SCORE!",
+
+newBest:
+"NEW BEST SCORE!",
 
 replay:
 "REPLAY",
@@ -1437,7 +1578,10 @@ complete:
 "Cubaan yang baik! Jom terus jadikan bandar kita lebih hijau!",
 
 plantsGrown:
-"TUMBUHAN DITANAM!",
+"SKOR TERBAIK!",
+
+newBest:
+"SKOR TERBAIK BAHARU!",
 
 replay:
 "MAIN SEMULA",
@@ -1483,19 +1627,45 @@ const resultMessage: string =
 
     
 
+
+
 return (
 
 <div
 className="
 fixed
-left-0
-right-0
-bottom-0
-top-[84px]
-
+inset-0
+bg-black
 overflow-hidden
-bg-none
+flex
+items-center
+justify-center
 "
+>
+
+<div
+className="
+relative
+w-full
+h-full
+flex
+items-center
+justify-center
+overflow-hidden
+"
+>
+
+<div
+
+
+
+className="
+relative
+overflow-hidden
+w-full
+h-full
+"
+
 >
 
 <div
@@ -1557,7 +1727,6 @@ w-full
 h-full
 overflow-hidden
 touch-none
-pt-[84px]
 "
 >
 
@@ -1571,29 +1740,29 @@ pt-[84px]
 showStartButton &&
 (
 <div
-className="
+
+style={{
+top:responsive.languageTop,
+right:responsive.languageRight
+}}
+
+className={`
 absolute
-top-6
-right-6
-
-sm:top-10
-sm:right-10
-
 z-[999]
 
 flex
 items-center
-gap-1
 
-bg-white/90
+bg-white/80
 backdrop-blur-md
-rounded-full
-p-1
 
-shadow-xl
-border-2
-border-white
-"
+rounded-full
+
+shadow-lg
+
+${responsive.languageContainerSize}
+
+`}
 >
 
 
@@ -1610,26 +1779,24 @@ changeLanguage("en");
 }}
 
 className={`
-px-5
-py-2
+${responsive.languageButtonSize}
+
+px-4
+py-1.5
+
 rounded-full
 
 font-black
-text-sm
-
-outline-none
-focus:outline-none
-focus:ring-0
 
 transition-all
 duration-200
 
 ${
-language === "en"
+language==="en"
 
 ?
 
-"bg-blue-500 text-white scale-105 shadow-md"
+"bg-blue-500 text-white shadow-md scale-105"
 
 :
 
@@ -1660,26 +1827,25 @@ changeLanguage("bm");
 }}
 
 className={`
-px-5
-py-2
+${responsive.languageButtonSize}
+
+px-4
+py-1.5
+
 rounded-full
 
 font-black
-text-sm
-outline-none
-focus:outline-none
-focus:ring-0
 
 transition-all
 duration-200
 
 
 ${
-language === "bm"
+language==="bm"
 
 ?
 
-"bg-orange-400 text-white scale-105 shadow-md"
+"bg-orange-400 text-white shadow-md scale-105"
 
 :
 
@@ -1688,7 +1854,6 @@ language === "bm"
 }
 
 `}
-
 >
 
 BM
@@ -1787,7 +1952,7 @@ top-40
 
 left-20
 
-text-3xl
+text-xl
 
 animate-leaf
 
@@ -1996,7 +2161,7 @@ tippyWalking && !tippyTalking
     tippyTalking
     ? talkingTippyConfig.size
     : tippyConfig.size
-  }px`
+  }`
 }}
 
 
@@ -2077,32 +2242,32 @@ pointer-events-none
 <div
 className="
 absolute
-top-6
-left-6
+left-[2%]
 
 flex
 items-center
-gap-5
-
+gap-2
 "
+style={{
+top: responsive.hudTop
+}}
 >
-
 
 {/* STAR */}
 
 <div
-className="
+className={`
 flex
 items-center
+justify-center
 gap-2
+
+${responsive.scoreBoxSize}
 
 bg-white/80
 backdrop-blur-xl
 
-px-4
-py-2
-
-rounded-2xl
+rounded-xl
 
 border-2
 border-yellow-300/80
@@ -2111,26 +2276,29 @@ shadow-[0_6px_20px_rgba(0,0,0,0.15)]
 
 transition-all
 duration-300
-"
+`}
 >
 
 <span
-  className="
-    text-3xl
+  className={`
+    ${responsive.scoreIconSize}
     drop-shadow-md
-  "
+  `}
 >
   ⭐
 </span>
 
 
 <span
-className="
-text-3xl
+className={`
+${responsive.scoreTextSize}
+
 font-black
+
 text-yellow-600
-"
+`}
 >
+
 
 {greenScore}
 
@@ -2145,18 +2313,18 @@ text-yellow-600
 
 <div
 
-className="
+className={`
 flex
 items-center
+justify-center
 gap-1
+
+${responsive.heartBoxSize}
 
 bg-white/80
 backdrop-blur-xl
 
-px-4
-py-2
-
-rounded-2xl
+rounded-xl
 
 border-2
 border-red-200
@@ -2165,10 +2333,9 @@ shadow-[0_6px_20px_rgba(0,0,0,0.15)]
 
 transition-all
 duration-300
-"
+`}
 
 >
-
 
 {
   [0, 1, 2].map((heart) => (
@@ -2178,10 +2345,9 @@ duration-300
       key={heart}
 
       className={`
-        text-3xl
+        ${responsive.heartSize}
 
-        transition-all
-        duration-500
+transition-all
 
         ${
           heart < lives
@@ -2210,21 +2376,18 @@ duration-300
 
 {/* RIGHT SIDE */}
 
-
 <div
-
 className="
 absolute
-
-top-6
-right-6
+right-[2%]
 
 flex
 items-center
-gap-4
-
+gap-2
 "
-
+style={{
+top: responsive.hudTop
+}}
 >
 
 
@@ -2233,57 +2396,54 @@ gap-4
 {/* TIMER */}
 
 <div
-  className="
-    relative
+  className={`
+relative
 
-    flex
-    items-center
-    gap-2
+flex
+items-center
+justify-center
+gap-2
 
-    px-5
-    py-2
+${responsive.timerBoxSize}
 
-    rounded-2xl
+rounded-xl
 
-    bg-white/80
-    backdrop-blur-xl
+bg-white/80
+backdrop-blur-xl
 
-    border-2
-    border-orange-300
+border-2
+border-orange-300
 
-    shadow-[0_6px_20px_rgba(0,0,0,0.15)]
+shadow-[0_6px_20px_rgba(0,0,0,0.15)]
 
-    overflow-hidden
-
-    transition-all
-    duration-300
-  "
+overflow-hidden
+`}
 >
 
   {/* RED FLASH BOX - LAST 10 SECONDS ONLY */}
 
-  {
-    dangerTime && (
+  
+{
+timeLeft <= 10 && timeLeft > 0 && (
 
-      <div
-        className="
-          absolute
-          inset-0
+<div
+className="
+absolute
+inset-0
+z-10
 
-          rounded-2xl
+rounded-xl
 
-          bg-red-500/75
-          border-2
-          border-red-500
+bg-red-500/70
 
-          animate-pulse
+animate-[pulse_1s_ease-in-out_infinite]
 
-          pointer-events-none
-        "
-      />
+pointer-events-none
+"
+/>
 
-    )
-  }
+)
+}
 
 
   {/* TIMER ICON */}
@@ -2293,7 +2453,7 @@ gap-4
       relative
       z-10
 
-      text-3xl
+     ${responsive.timerIconSize}
     "
   >
     ⏱️
@@ -2302,25 +2462,29 @@ gap-4
 
   {/* TIME */}
 
-  <span
-    className={`
-      relative
-      z-10
+ <span
+className={`
+relative
+z-20
 
-      text-3xl
-      font-black
-      tracking-wide
+${responsive.timerTextSize}
 
-      transition-colors
-      duration-300
+font-black
+tracking-wide
 
-      ${
-        dangerTime
-          ? "text-white"
-          : "text-orange-600"
-      }
-    `}
-  >
+transition-colors
+duration-300
+
+${
+timeLeft <= 10 && timeLeft > 0
+?
+"text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]"
+:
+"text-orange-600"
+}
+
+`}
+>
 
     {
       Math.floor(timeLeft / 60)
@@ -2387,13 +2551,12 @@ playClickSound();
 
 
 
-className="
+className={`
 pointer-events-auto
 
-w-14
-h-14
+${responsive.pauseSize}
 
-rounded-2xl
+rounded-xl
 
 bg-white/80
 backdrop-blur-xl
@@ -2408,22 +2571,20 @@ items-center
 justify-center
 
 hover:scale-105
-hover:bg-blue-50
 
 active:scale-90
 
 transition-all
 duration-200
-"
+`}
 >
 
 
 <span
-className="
-text-3xl
-"
+className={`
+${responsive.pauseIconSize}
+`}
 >
-
 {
 gamePaused
 ?
@@ -2431,8 +2592,6 @@ gamePaused
 :
 "⏸️"
 }
-
-
 </span>
 
 
@@ -2476,7 +2635,13 @@ pointer-events-none
 <div
 
 className={`
-text-[140px]
+${
+showGo
+?
+responsive.countdownGoSize
+:
+responsive.countdownSize
+}
 
 font-black
 
@@ -2486,6 +2651,18 @@ animate-bounce
 
 transition-all
 duration-300
+
+
+${responsive.countdownOffset}
+
+
+flex
+items-center
+justify-center
+
+
+
+
 
 ${
 showGo
@@ -2504,7 +2681,6 @@ countdown===2
 }
 
 `}
-
 >
 
 {
@@ -2529,50 +2705,63 @@ countdown
 
                 <div
 
-                  className="
+className="
 absolute
 z-[400]
- bg-gradient-to-b
+bg-gradient-to-b
 from-white
 to-blue-50
-  rounded-3xl
-  shadow-lg
-  p-4
-  text-center
-  "
-                 style={{
- left: `${
-   !gameStarted
-   ? introDialogueConfig.x
-   : gameDialogueConfig.x
- }%`,
+rounded-2xl
+shadow-lg
+${
+tippyTalking
+?
+responsive.talkingDialoguePadding
+:
+responsive.dialoguePadding
+}
+text-center
+"
+            style={{
 
- top: `${
-   !gameStarted
-   ? introDialogueConfig.y
-   : gameDialogueConfig.y
- }%`,
+left:
+tippyTalking
+?
+`${responsive.talkingDialogueX}%`
+:
+`${responsive.dialogueX}%`,
 
- width: `${
-   !gameStarted
-   ? introDialogueConfig.width
-   : gameDialogueConfig.width
- }px`
+
+top:
+tippyTalking
+?
+`${responsive.talkingDialogueY}%`
+:
+`${responsive.dialogueY}%`,
+
+
+width:
+tippyTalking
+?
+`${responsive.talkingDialogueWidth}px`
+:
+`${responsive.dialogueWidth}px`
+
 }}
                 >
 
                   {/* Name */}
-                  <div
-className="
+<div
+className={`
 text-green-600
 font-bold
-text-xs
-mb-1
-"
+mb-2
+
+${responsive.dialogueNameSize}
+`}
 >
-                  
-                    TIPPY
-                  </div>
+TIPPY
+</div>
 
 
                   {/* Dialogue */}
@@ -2583,11 +2772,11 @@ font-bold
 leading-relaxed
 
 ${
-!gameStarted
+tippyTalking
 ?
-"text-base"
+responsive.talkingDialogueTextSize
 :
-"text-sm"
+responsive.dialogueTextSize
 }
 
 `}
@@ -2653,6 +2842,8 @@ setShowStartButton(false);
 scoreSavedRef.current = false;
 
 setTimeLeft(60);
+setTenSecondWarning(false);
+setDangerTime(false);
 
 setTippyHidden(true);
 setTippyTalking(false);
@@ -2660,6 +2851,7 @@ setTippyWalking(false);
 setSpeechText("");
 
                     setGreenScore(0);
+                    greenScoreRef.current = 0;
                     setPlacedPlants([]);
                     spawnIndex.current = 0;
                    setActiveTargets([
@@ -2689,16 +2881,17 @@ y:78
 
                     startGameCountdown();
 
-                  }}
+                 }}
 
-                  className="
+style={{
+  bottom: responsive.startButtonBottom
+}}
+
+className={`
 absolute
 
-bottom-[90px]
-
-sm:bottom-[105px]
 left-1/2
--translate-x-1/2
+translate-x-[-50%]
 
 z-[999]
 
@@ -2708,12 +2901,13 @@ to-green-600
 
 text-white
 
-text-xl
+${responsive.startButtonTextSize}
 
 font-black
 
-px-10
-py-4
+${responsive.startButtonPadding}
+
+
 
 rounded-full
 
@@ -2728,9 +2922,10 @@ duration-200
 
 flex
 items-center
+justify-center
 gap-2
 
-"
+`}
 
                 >
 
@@ -2747,21 +2942,31 @@ gap-2
             {
               gameStarted && (
 
-                <div
+               <div
 
-                  className="
+className="
 absolute
 
-top-10
-md:top-5
+z-[999]
+
+left-1/2
+
+-translate-x-1/2
 
 left-1/2
 -translate-x-1/2
-
-
 z-[999]
 "
-                >
+
+style={{
+
+top:responsive.inventoryTop,
+
+"--inventory-size":responsive.inventorySize
+
+} as React.CSSProperties}
+
+>
 
 
                   {/* Title */}
@@ -2802,8 +3007,8 @@ mb-2
 
                    <div
   className="
-    w-[clamp(60px,8vw,96px)]
-h-[clamp(60px,8vw,96px)]
+    w-[var(--inventory-size)]
+h-[var(--inventory-size)]
 
     flex
     items-center
@@ -2849,8 +3054,8 @@ startHoldPlant("tree");
                         onPointerLeave={cancelHold}
 
                         className={`
-w-20
-h-20
+w-full
+h-full
 object-contain
 rounded-full
 transition-transform
@@ -2880,8 +3085,8 @@ ${selectedPlant === "tree"
 
                     <div
   className="
- w-[clamp(60px,8vw,96px)]
-h-[clamp(60px,8vw,96px)]
+w-[var(--inventory-size)]
+h-[var(--inventory-size)]
 
     flex
     items-center
@@ -2928,8 +3133,8 @@ startHoldPlant("grass");
                         onPointerLeave={cancelHold}
 
                         className={`
-w-20
-h-20
+w-full
+h-full
 
 object-contain
 rounded-full
@@ -2961,8 +3166,8 @@ ${selectedPlant === "grass"
 
                    <div
   className="
-    w-[clamp(60px,8vw,96px)]
-h-[clamp(60px,8vw,96px)]
+ w-[var(--inventory-size)]
+h-[var(--inventory-size)]
 
     flex
     items-center
@@ -3009,9 +3214,8 @@ startHoldPlant("flower");
                         onPointerLeave={cancelHold}
 
                         className={`
-w-20
-h-20
-
+w-full
+h-full
 object-contain
 rounded-full
 
@@ -3065,62 +3269,65 @@ ${selectedPlant === "flower"
       {/* ================= RESULT CARD ================= */}
 
       <div
-        className="
-          relative
+className={`
+relative
 
-         w-[520px]
+${responsive.resultCardWidth}
+
 max-w-[90%]
-       
 
-          bg-[#fffaf3]
+${responsive.resultCardPadding}
 
-          border-[4px]
-          border-green-300
+bg-[#fffaf3]
 
-          rounded-[30px]
+border-[4px]
 
-          shadow-[0_12px_0_rgba(22,163,74,0.16),0_24px_45px_rgba(0,0,0,0.22)]
+border-green-300
 
-          px-7
-          pt-14
-          pb-7
+rounded-[30px]
 
-          text-center
-        "
-      >
+
+
+text-center
+translate-y-[20px]
+
+`}
+>
 
 
         {/* ================= COMPLETE HEADER ================= */}
 
-        <div
-          className="
-            absolute
+       <div
+className={`
+absolute
 
-            left-1/2
-            top-[-24px]
-            -translate-x-1/2
+left-1/2
+-translate-x-1/2
 
-            w-[220px]
+${responsive.resultHeaderWidth}
 
-            py-3
+py-3
 
-            bg-gradient-to-b
-            from-yellow-300
-            to-orange-400
+bg-gradient-to-b
+from-yellow-300
+to-orange-400
 
-          
-           
+rounded-[18px]
 
-            rounded-[18px]
+shadow-[0_6px_0_rgba(194,65,12,0.30)]
 
-            shadow-[0_6px_0_rgba(194,65,12,0.30)]
+text-orange-900
 
-            text-orange-900
-            text-[24px]
-            font-black
-            tracking-wide
-          "
-        >
+${responsive.resultTitleSize}
+
+font-black
+tracking-wide
+`}
+style={{
+top: "-14px"
+}}
+>
+
           {language === "bm"
 ?
 "TAHNIAH!"
@@ -3144,23 +3351,23 @@ max-w-[90%]
           "
         >
 
-          <span className="text-[clamp(20px,3vw,42px)]">
+          <span className={responsive.resultStarSize}>
             ⭐
           </span>
 
-          <span className="text-[clamp(20px,3vw,42px)]">
+          <span className={responsive.resultStarSize}>
             ⭐
           </span>
 
-          <span className="text-[clamp(20px,3vw,42px)]">
+          <span className={responsive.resultStarSize}>
             ⭐
           </span>
 
-          <span className="text-[clamp(20px,3vw,42px)]">
+          <span className={responsive.resultStarSize}>
             ⭐
           </span>
 
-          <span className="text-[clamp(20px,3vw,42px)]">
+          <span className={responsive.resultStarSize}>
             ⭐
           </span>
 
@@ -3170,17 +3377,18 @@ max-w-[90%]
         {/* ================= TITLE ================= */}
 
         <h1
-          className="
-            mt-3
+className={`
+mt-3
 
-            text-[clamp(14px,2vw,24px)]
-            leading-tight
+${responsive.resultTitleSize}
 
-            font-black
+leading-tight
 
-            text-green-600
-          "
-        >
+font-black
+
+text-green-600
+`}
+>
           {dialogue[language ?? "en"].completeTitle}
         </h1>
 
@@ -3188,31 +3396,30 @@ max-w-[90%]
         {/* ================= RESULT MESSAGE ================= */}
 
         <p
-          className="
-            mt-2
-
-            px-2
-
-            text-[14px]
-            leading-relaxed
-
-            font-semibold
-            text-slate-600
-          "
-        >
-          {resultMessage}
-        </p>
+className="
+text-slate-600
+text-center
+mt-3
+h-[45px]
+leading-tight
+flex
+items-center
+justify-center
+"
+>
+{resultMessage}
+</p>
 
 
         {/* ================= PLANTS GROWN ================= */}
 
         <div
           className="
-            mt-5
+            mt-3
 
             mx-auto
 
-           w-[55%]
+           w-[58%]
 h-auto
 aspect-[2/1]
 
@@ -3243,7 +3450,7 @@ aspect-[2/1]
               items-center
               justify-center
 
-              text-[46px]
+              text-[40px]
 
               leading-none
             "
@@ -3260,29 +3467,28 @@ aspect-[2/1]
               flex-col
               items-center
               justify-center
+              
 
               text-center
             "
           >
 
-            <div
-              className="
-                text-[40px]
-                leading-none
-
-                font-black
-
-                text-green-600
-              "
-            >
-              {greenScore}
-            </div>
+           <div
+className={`
+${responsive.resultScoreSize}
+leading-none
+font-black
+text-green-600
+`}
+>
+{displayScore}
+</div>
 
             <div
               className="
                 mt-1
 
-                text-[13px]
+                text-[10px]
                 leading-tight
 
                 font-black
@@ -3290,7 +3496,13 @@ aspect-[2/1]
                 text-green-700
               "
             >
-              {dialogue[language ?? "en"].plantsGrown}
+              {
+isNewBestScore
+?
+dialogue[language ?? "en"].newBest
+:
+dialogue[language ?? "en"].plantsGrown
+}
             </div>
 
           </div>
@@ -3312,6 +3524,8 @@ aspect-[2/1]
           "
         >
 
+        
+
 
           {/* REPLAY */}
 
@@ -3322,6 +3536,8 @@ aspect-[2/1]
               playClickSound();
 
               scoreSavedRef.current = false;
+
+              setIsNewBestScore(false);
 
               stopBackgroundMusic();
 
@@ -3380,78 +3596,73 @@ setShowGo(false);
 
             }}
 
-            className="
-             w-[40%]
+            className={`
+w-[40%]
 h-auto
 py-3
-              rounded-[18px]
 
-              bg-gradient-to-b
-              from-lime-400
-              to-green-500
+rounded-[18px]
 
-            
+bg-gradient-to-b
+from-lime-400
+to-green-500
 
-              shadow-[0_6px_0_rgba(21,128,61,0.50)]
+shadow-[0_6px_0_rgba(21,128,61,0.50)]
 
-              text-white
-              text-[16px]
-              font-black
+text-white
 
-              hover:scale-105
+${responsive.resultButtonSize}
 
-              active:translate-y-[2px]
-              active:shadow-[0_3px_0_rgba(21,128,61,0.50)]
+font-black
 
-              transition-all
-              duration-150
-            "
+hover:scale-105
+
+active:translate-y-[2px]
+
+transition-all
+duration-150
+`}
           >
             {dialogue[language ?? "en"].replay}
           </button>
 
-
           {/* NEXT */}
 
-          <button
+<button
 
-            onClick={() => {
+onClick={goNextScene}
 
-              playClickSound();
-
-              console.log("NEXT SCENE");
-
-            }}
-
-            className="
-             w-[40%]
+className={`
+w-[40%]
 h-auto
 py-3
 
-              rounded-[18px]
+rounded-[18px]
 
-              bg-gradient-to-b
-              from-sky-400
-              to-blue-500
+bg-gradient-to-b
+from-blue-400
+to-blue-600
 
+shadow-[0_6px_0_rgba(37,99,235,0.50)]
 
-              shadow-[0_6px_0_rgba(29,78,216,0.50)]
+text-white
 
-              text-white
-              text-[16px]
-              font-black
+${responsive.resultButtonSize}
 
-              hover:scale-105
+font-black
 
-              active:translate-y-[2px]
-              active:shadow-[0_3px_0_rgba(29,78,216,0.50)]
+hover:scale-105
 
-              transition-all
-              duration-150
-            "
-          >
-            {dialogue[language ?? "en"].next}
-          </button>
+active:translate-y-[2px]
+
+transition-all
+duration-150
+`}
+>
+
+{dialogue[language ?? "en"].next}
+
+</button>
 
         </div>
 
@@ -3461,6 +3672,8 @@ py-3
 
   )
 }
+
+
 
             {/* Developer Panel */}
             {
@@ -3481,9 +3694,13 @@ pointer-events-auto
 )
 }
 
-                  </div>
+               </div>
+
 </div>
 
+</div>
+
+</div>
 </div>
 
 );

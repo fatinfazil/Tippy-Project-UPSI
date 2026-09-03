@@ -308,7 +308,9 @@ export async function upsertQuizResult(input: {
       INSERT INTO quiz_results (quiz_id, user_id, question_id, score, last_modified_at)
       VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT (quiz_id, user_id, question_id)
-      DO UPDATE SET score = EXCLUDED.score, last_modified_at = NOW()
+      DO UPDATE SET 
+score = GREATEST(game_scores.score, EXCLUDED.score),
+last_modified_at = NOW()
       RETURNING id, quiz_id, user_id, question_id, score, last_modified_at
     `,
     values: [input.quizId, input.userId, input.questionId, input.score],
@@ -382,15 +384,42 @@ export async function upsertGameScore(input: {
   score: number;
 }): Promise<GameScoreRow> {
   const result = await getPool().query({
-    text: `
-      INSERT INTO game_scores (game_id, user_id, score, last_modified_at)
-      VALUES ($1, $2, $3, NOW())
-      ON CONFLICT (game_id, user_id)
-      DO UPDATE SET score = EXCLUDED.score, last_modified_at = NOW()
-      RETURNING id, game_id, user_id, score, last_modified_at
-    `,
-    values: [input.gameId, input.userId, input.score],
-  });
+text: `
+INSERT INTO game_scores
+(
+ game_id,
+ user_id,
+ score,
+ last_modified_at
+)
+
+VALUES
+(
+ $1,
+ $2,
+ $3,
+ NOW()
+)
+
+ON CONFLICT(game_id,user_id)
+
+DO UPDATE SET
+
+score = GREATEST(
+ game_scores.score,
+ EXCLUDED.score
+),
+
+last_modified_at = NOW()
+
+RETURNING id, game_id, user_id, score, last_modified_at
+`,
+values:[
+ input.gameId,
+ input.userId,
+ input.score
+],
+});
 
   return mapGameScoreRow(result.rows[0]);
 }
