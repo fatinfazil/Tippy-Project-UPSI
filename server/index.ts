@@ -10,6 +10,7 @@ import {
   getDbHostLabel,
   initDb,
   saveQuizResult,
+  getBestQuizScore,
   type QuizAnswerInput,
 } from './db.ts';
 
@@ -394,6 +395,12 @@ async function main(): Promise<void> {
             answers,
           });
 
+        const bestScore =
+          await getBestQuizScore(
+            child.user_id,
+            'scene08'
+          );
+
         // --------------------------------------
         // GET COMPLETION TIME
         // --------------------------------------
@@ -426,6 +433,9 @@ async function main(): Promise<void> {
             'scene08',
 
           score,
+
+          best_score:
+            bestScore,
 
           total_questions:
             totalQuestions,

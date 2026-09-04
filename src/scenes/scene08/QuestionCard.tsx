@@ -292,7 +292,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
               px-2
 
-              text-[28px]
+              text-[30px]
 
               font-bold
 

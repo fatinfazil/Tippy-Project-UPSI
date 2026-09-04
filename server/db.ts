@@ -47,6 +47,14 @@ export interface QuizResultRow {
   last_modified_at: string;
 }
 
+export interface QuizAttemptRow {
+  id: string;
+  quiz_id: string;
+  user_id: string;
+  score: number;
+  completed_at: string;
+}
+
 // ============================================
 // DATABASE POOL
 // ============================================
@@ -187,6 +195,41 @@ async function ensureQuizResultsTable(
 }
 
 // ============================================
+// ENSURE QUIZ ATTEMPTS TABLE
+// ============================================
+
+async function ensureQuizAttemptsTable(
+  database: Pool
+): Promise<void> {
+
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS quiz_attempts (
+      id BIGSERIAL PRIMARY KEY,
+
+      quiz_id TEXT NOT NULL,
+
+      user_id TEXT NOT NULL
+        REFERENCES children(user_id)
+        ON DELETE CASCADE,
+
+      score INTEGER NOT NULL,
+
+      completed_at TIMESTAMPTZ
+        DEFAULT NOW()
+    );
+  `);
+
+  await database.query(`
+    CREATE INDEX IF NOT EXISTS
+      quiz_attempts_user_quiz_idx
+    ON quiz_attempts(
+      user_id,
+      quiz_id
+    );
+  `);
+}
+
+// ============================================
 // INITIALIZE DATABASE
 // ============================================
 
@@ -225,6 +268,8 @@ export async function initDb(): Promise<Pool> {
   // ==========================================
 
   await ensureQuizResultsTable(pool);
+
+  await ensureQuizAttemptsTable(pool);
 
   // ==========================================
   // CREATE / UPGRADE PARENT TABLES
@@ -504,6 +549,38 @@ export async function saveQuizResult(
     }
 
     // ========================================
+    // SAVE QUIZ ATTEMPT SUMMARY
+    // ========================================
+
+    const totalScore =
+      input.answers.reduce(
+        (total, answer) =>
+          total + (answer.isCorrect ? 10 : 0),
+        0
+      );
+
+    await client.query(
+      `
+        INSERT INTO quiz_attempts (
+          quiz_id,
+          user_id,
+          score
+        )
+
+        VALUES (
+          $1,
+          $2,
+          $3
+        )
+      `,
+      [
+        input.quizId,
+        input.userId,
+        totalScore,
+      ]
+    );
+
+    // ========================================
     // COMMIT
     // ========================================
 
@@ -530,4 +607,35 @@ export async function saveQuizResult(
     client.release();
 
   }
+}
+
+// ============================================
+// GET BEST QUIZ SCORE
+// ============================================
+
+export async function getBestQuizScore(
+  userId: string,
+  quizId: string
+): Promise<number> {
+
+  const result =
+    await getPool().query(
+      `
+      SELECT
+        MAX(score) AS best_score
+
+      FROM quiz_attempts
+
+      WHERE user_id = $1
+      AND quiz_id = $2
+      `,
+      [
+        userId,
+        quizId,
+      ]
+    );
+
+  return Number(
+    result.rows[0]?.best_score ?? 0
+  );
 }

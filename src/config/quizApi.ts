@@ -17,6 +17,7 @@ export interface SavedQuizResult {
   user_id: string;
   scene: string;
   score: number;
+  best_score: number;
   total_questions: number;
   stars: number;
   answers: QuizAnswerPayload[];

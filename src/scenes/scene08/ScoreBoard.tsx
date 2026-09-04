@@ -40,6 +40,7 @@ import tippy5Ms from './audio/quiz/tippy_5_ms.mp3';
 
 interface ScoreBoardProps {
   score: number;
+  bestScore?: number;
   totalQuestions: number;
   language: 'en' | 'ms';
   onPlayAgain: () => void;
@@ -55,6 +56,7 @@ export const ScoreBoard: React.FC<
   ScoreBoardProps
 > = ({
   score,
+  bestScore,
   totalQuestions,
   language,
   onPlayAgain,
@@ -175,6 +177,11 @@ export const ScoreBoard: React.FC<
       ? tippyMessage
       : tippyMessage[language];
 
+  // Prevent TypeScript undefined error
+  // First-time players will have no best score
+  const safeBestScore =
+    bestScore ?? 0;
+
 
   // ============================================
   // TIPPY AUDIO
@@ -253,6 +260,8 @@ export const ScoreBoard: React.FC<
     useState(false);
 
 
+
+
   // ============================================
   // PLAY TIPPY VOICE
   // ============================================
@@ -305,6 +314,8 @@ export const ScoreBoard: React.FC<
       }
     };
   };
+
+
 
 
   // ============================================
@@ -590,7 +601,7 @@ export const ScoreBoard: React.FC<
           w-full
           max-w-[680px]
           pt-[45px]
-          scale-[0.88]
+          scale-[0.84]
           origin-center
         "
       >
@@ -602,7 +613,7 @@ export const ScoreBoard: React.FC<
         <div
           className="
             absolute
-            top-[-25px]
+            top-[-10px]
             left-1/2
             z-40
             w-[500px]
@@ -718,7 +729,7 @@ export const ScoreBoard: React.FC<
               flex-col
               items-center
               justify-center
-              mb-6
+              mb-16
             "
           >
 
@@ -738,8 +749,8 @@ export const ScoreBoard: React.FC<
 
             <div
               className="
-                text-7xl
-                sm:text-8xl
+                text-6xl
+                sm:text-7xl
                 font-black
                 text-green-700
                 drop-shadow-[0_6px_8px_rgba(0,0,0,0.18)]
@@ -747,6 +758,50 @@ export const ScoreBoard: React.FC<
             >
               {earnedStars} / 5
             </div>
+
+            {
+              safeBestScore > 0 &&
+              (
+                <div
+                  className="
+                    mt-12
+                    mx-auto
+                    w-[280px]
+                    px-10
+                    py-4
+                    rounded-3xl
+                    bg-yellow-100
+                    border-4
+                    border-yellow-400
+                    shadow-md
+                  "
+                >
+
+                  <div
+                    className="
+                      text-2xl
+                      font-black
+                      text-yellow-700
+                    "
+                  >
+                    🏆 {language === 'ms'
+                      ? 'SKOR TERBAIK'
+                      : 'BEST SCORE'}
+                  </div>
+
+                  <div
+                    className="
+                      text-4xl
+                      font-black
+                      text-green-700
+                    "
+                  >
+                    {Math.floor(safeBestScore / 10)} / {totalQuestions}
+                  </div>
+
+                </div>
+              )
+            }
 
           </div>
 
@@ -883,7 +938,7 @@ export const ScoreBoard: React.FC<
               flex
               items-center
               justify-center
-              mt-[-5px]
+              mt-[-8px]
               mb-0
               transition-all
               duration-700
@@ -907,12 +962,12 @@ export const ScoreBoard: React.FC<
               src={tippyGif}
               alt="Tippy"
               className="
-                w-[260px]
-                h-[260px]
-                sm:w-[290px]
-                sm:h-[290px]
-                md:w-[310px]
-                md:h-[310px]
+                w-[220px]
+                h-[220px]
+                sm:w-[240px]
+                sm:h-[240px]
+                md:w-[260px]
+                md:h-[260px]
                 object-contain
                 drop-shadow-[0_8px_8px_rgba(0,0,0,0.18)]
               "
@@ -932,7 +987,7 @@ export const ScoreBoard: React.FC<
               flex
               gap-3
               sm:gap-4
-              mt-3
+              mt-1
               transition-all
               duration-500
               ${

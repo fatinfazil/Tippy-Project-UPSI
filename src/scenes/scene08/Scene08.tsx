@@ -66,6 +66,15 @@ const Scene08: React.FC<Scene08Props> = ({
   const [isSaving, setIsSaving] =
     useState(false);
 
+  const [bestScore, setBestScore] =
+    useState<number | undefined>(undefined);
+
+  const bestScoreRef =
+    useRef<number | undefined>(undefined);
+
+  const [hasPlayedBefore, setHasPlayedBefore] =
+    useState(false);
+
 
   // ==========================================
   // AUDIO
@@ -414,11 +423,26 @@ const Scene08: React.FC<Scene08Props> = ({
         );
 
 
-        await saveQuizResult(
-          accessCode,
-          answersRef.current
+        const result =
+          await saveQuizResult(
+            accessCode,
+            answersRef.current
+          );
+
+        const latestBest =
+          Math.max(
+            score,
+            result.best_score ?? 0,
+            bestScoreRef.current ?? 0
+          );
+
+
+        setBestScore(
+          latestBest
         );
 
+        bestScoreRef.current =
+          latestBest;
 
         console.log(
           'Scene08 result saved successfully.'
@@ -450,6 +474,8 @@ const Scene08: React.FC<Scene08Props> = ({
   const handlePlayAgain = () => {
 
     stopAudio();
+
+    setHasPlayedBefore(true);
 
     setCurrentIndex(0);
 
@@ -507,6 +533,10 @@ const Scene08: React.FC<Scene08Props> = ({
 
           score={
             score
+          }
+
+          bestScore={
+            bestScore
           }
 
           totalQuestions={
