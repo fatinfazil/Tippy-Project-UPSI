@@ -183,6 +183,9 @@ const finishGame = async (
  // 1. Ambil score lama dalam database
 const oldHighest = await getHighestScore();
 
+console.log("OLD SCORE FROM DATABASE =", oldHighest);
+console.log("FINAL SCORE RECEIVED =", finalScore);
+
 
 // 2. Banding current score dengan database
 const finalHighest = Math.max(
@@ -297,6 +300,11 @@ const goNextScene = () => {
     x: 50,
     y: 50
   });
+
+  const plantPositionRef = useRef({
+  x:50,
+  y:50
+});
 
   const [placedPlants, setPlacedPlants] = useState<any[]>([]);
 
@@ -422,7 +430,7 @@ onEnded();
 
 };
 
-  const [worldSpeed, setWorldSpeed] = useState(0.5);
+  const [worldSpeed, setWorldSpeed] = useState(1.0);
   const [backgroundX, setBackgroundX] = useState(0);
 
   const [gameFinished, setGameFinished] = useState(false);
@@ -523,11 +531,10 @@ const saveGameScore = async (
           },
 
           body: JSON.stringify({
-  access_code: accessCode,
-  game_id: GAME_ID,
-  score: finalScore,
-  user_id: "usr_adam"
-})
+            access_code: accessCode,
+            game_id: GAME_ID,
+            score: finalScore
+          })
         }
       );
 
@@ -856,34 +863,14 @@ const newLife = prev - 1;
 
 if (newLife <= 0) {
 
-  setSpeechText(
-  dialogue[language ?? "en"].complete
-);
+      finishGame(
+         greenScoreRef.current
+      );
 
-  setTippyTalking(true);
-  setTippyWalking(false);
-
-  stopDialogueAudio();
-
-  setGameFinished(true);
-  setGameStarted(false);
-
-  stopBackgroundMusic();
-
-  if (countdownAudio.current) {
-    countdownAudio.current.pause();
-    countdownAudio.current.currentTime = 0;
-  }
-
-  playSound(
-"celebration.mp3"
-);
-
-}
+   }
 
 
-return newLife;
-
+   return newLife;
 
 });
 
@@ -1123,7 +1110,7 @@ setWorldSpeed(0.7);
 
 const speedUp=setTimeout(()=>{
 
-setWorldSpeed(1.0);
+setWorldSpeed(1.5);
 
 },10000);
 
@@ -1218,7 +1205,7 @@ return next;
 
       );
 
-  }, 60); 
+  }, 100);
 
 
     return () => clearInterval(movement);
@@ -1694,18 +1681,20 @@ overflow-hidden
           e.currentTarget.getBoundingClientRect();
 
 
-        setPlantPosition({
+        const newPosition = {
+  x:
+   ((e.clientX - rect.left)
+   / rect.width) * 100,
 
-          x:
-            ((e.clientX - rect.left)
-              / rect.width) * 100,
+  y:
+   ((e.clientY - rect.top)
+   / rect.height) * 100
+};
 
 
-          y:
-            ((e.clientY - rect.top)
-              / rect.height) * 100
+plantPositionRef.current = newPosition;
 
-        });
+setPlantPosition(newPosition);
 
 
       }}

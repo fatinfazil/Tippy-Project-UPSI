@@ -233,7 +233,7 @@ talkingTippyY:35,
 
 // DIALOGUE
 
-dialogueWidth:310,
+dialogueWidth:315,
 dialogueX:5.5,
 dialogueY:26,
 dialoguePadding:"px-7 py-10",
