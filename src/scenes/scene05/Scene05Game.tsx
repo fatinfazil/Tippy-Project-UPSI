@@ -1132,7 +1132,7 @@ return ()=>clearTimeout(speedUp);
       // PARALLAX BACKGROUND
    setBackgroundX(prev => {
 
-const next = prev - (worldSpeed * 3);
+const next = prev - (worldSpeed * 2);
 
 
 if(next <= -window.innerWidth){

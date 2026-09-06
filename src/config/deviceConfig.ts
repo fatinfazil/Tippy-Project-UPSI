@@ -404,7 +404,7 @@ talkingTippyY:38,
 // DIALOGUE
 // =================
 
-dialogueWidth:390,
+dialogueWidth:400,
 
 dialogueX:13,
 
