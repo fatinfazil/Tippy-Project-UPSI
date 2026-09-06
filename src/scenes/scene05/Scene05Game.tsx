@@ -523,10 +523,11 @@ const saveGameScore = async (
           },
 
           body: JSON.stringify({
-            access_code: accessCode,
-            game_id: GAME_ID,
-            score: finalScore
-          })
+  access_code: accessCode,
+  game_id: GAME_ID,
+  score: finalScore,
+  user_id: "usr_adam"
+})
         }
       );
 
