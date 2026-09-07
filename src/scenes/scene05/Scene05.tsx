@@ -1,8 +1,12 @@
 import React from "react";
 import { Scene05Game } from "./Scene05Game";
 
-export const Scene05 = () => {
+interface Scene05Props {
+  onComplete?: () => void;
+  isDevMode?: boolean;
+}
 
+export const Scene05: React.FC<Scene05Props> = () => {
   return (
     <div
       className="
@@ -15,5 +19,4 @@ export const Scene05 = () => {
       <Scene05Game />
     </div>
   );
-
 };

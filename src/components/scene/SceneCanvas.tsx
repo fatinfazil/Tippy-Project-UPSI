@@ -1,5 +1,4 @@
 import React from 'react';
-import { STORY_STAGE_ASPECT_RATIO } from '../../config/scene1.config';
 
 interface SceneCanvasProps {
   children: React.ReactNode;
@@ -11,20 +10,78 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
   variant = 'framed',
 }) => {
   return (
-    <div className="w-full h-full flex-1 flex items-center justify-center overflow-hidden bg-slate-950 p-0 m-0 relative min-h-0 min-w-0">
+    <div
+      className="
+        w-full
+        h-full
+        flex-1
+        flex
+        items-center
+        justify-center
+        overflow-hidden
+        bg-slate-950
+        p-0
+        m-0
+        relative
+        min-h-0
+        min-w-0
+      "
+    >
       <div
-        className={`relative overflow-hidden flex items-center justify-center transition-all ${
-          variant === 'fullscreen'
-            ? 'bg-black border-0 rounded-none shadow-none'
-            : 'bg-slate-900 border-0 sm:border-2 border-emerald-200/50 rounded-xl sm:rounded-2xl shadow-2xl'
-        }`}
+        className={`
+          relative
+          flex
+          items-center
+          justify-center
+          overflow-hidden
+
+          ${
+            variant === 'fullscreen'
+              ? `
+                bg-black
+                border-0
+                rounded-none
+                shadow-none
+              `
+              : `
+                bg-slate-900
+                border-0
+                sm:border-2
+                border-emerald-200/50
+                rounded-xl
+                sm:rounded-2xl
+                shadow-2xl
+              `
+          }
+        `}
         style={{
-          aspectRatio: `${STORY_STAGE_ASPECT_RATIO}`,
+          /*
+           * =========================================
+           * FIXED GAME STAGE
+           * =========================================
+           *
+           * The game itself ALWAYS uses 16:9.
+           *
+           * The stage will shrink to fit whichever
+           * dimension is smaller:
+           *
+           * - available width
+           * - available height
+           *
+           * This prevents cropping on phones/tablets.
+           */
+          aspectRatio: '16 / 9',
+
+          width: '100%',
           maxWidth: '100%',
           maxHeight: '100%',
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
+
+          /*
+           * Let aspect-ratio determine the height.
+           */
+          height: 'auto',
+
+          flexShrink: 1,
         }}
       >
         {children}

@@ -123,33 +123,25 @@
   animation: fadeInBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@keyframes plantGrow {
-
-0% {
-transform:scale(0);
-opacity:0;
-}
-
-60% {
-transform:scale(1.4);
-}
-
-100% {
-transform:scale(1);
-opacity:1;
-}
-
-}
-
-
-.plant-grow {
-
-  animation: plantGrow 1s ease-out;
-
+@keyframes trashArc {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(65px, -50px) rotate(180deg);
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(130px, 15px) rotate(360deg);
+    opacity: 0;
+  }
 }
 
 @keyframes popupReveal {
-
   0% {
     transform: scale(0.7);
     opacity: 0;
@@ -163,9 +155,7 @@ opacity:1;
     transform: scale(1);
     opacity: 1;
   }
-
 }
-
 
 .popupReveal {
   animation: popupReveal 0.5s ease-out forwards;
@@ -412,4 +402,6 @@ animation:starFly 0.8s ease-in-out forwards;
 
 }
 
-
+.animate-trashArc {
+  animation: trashArc 1.5s infinite ease-in-out;
+}
