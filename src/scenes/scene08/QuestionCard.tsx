@@ -40,44 +40,28 @@ const QuestionCard: React.FC<
 }) => {
 
 
-  // ============================================
-  // SPEAKER
-  // ============================================
+ // ============================================
+// IMAGE AUDIO CLICK
+// ============================================
 
-  const handleSpeakerClick = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
+const handleImageClick = (
+  event: React.MouseEvent<HTMLDivElement>
+) => {
 
-    event.stopPropagation();
+  event.stopPropagation();
 
+  if (
+    !isDisabled &&
+    option.audio
+  ) {
 
-    if (
-      !isDisabled &&
-      option.audio
-    ) {
+    onPlayAudio(
+      option.audio[language]
+    );
 
-      onPlayAudio(
-        option.audio[language]
-      );
+  }
 
-    }
-
-  };
-
-
-  // ============================================
-  // CARD CLICK
-  // ============================================
-
-  const handleCardClick = () => {
-
-    if (!isDisabled) {
-
-      onSelect(option);
-
-    }
-
-  };
+};
 
 
   // ============================================
@@ -108,11 +92,22 @@ const QuestionCard: React.FC<
 
     <div
 
-      onClick={
-        handleCardClick
-      }
+onClick={() => {
 
-      className={`
+  if (
+    !isDisabled &&
+    option.audio
+  ) {
+
+    onPlayAudio(
+      option.audio[language]
+    );
+
+  }
+
+}}
+
+className={`
         relative
 
         flex
@@ -151,118 +146,7 @@ const QuestionCard: React.FC<
 
     >
 
-      {/* ====================================== */}
-      {/* OPTION LETTER */}
-      {/* ====================================== */}
-
-      <div
-
-        className="
-          absolute
-
-          top-2
-          left-2
-
-          z-50
-
-          flex
-          items-center
-          justify-center
-
-          w-[68px]
-          h-[68px]
-
-          rounded-full
-
-          border-4
-          border-white
-
-          bg-green-500
-
-          text-white
-
-          text-3xl
-          font-black
-
-          shadow-lg
-
-          pointer-events-none
-        "
-
-        aria-hidden="true"
-
-      >
-
-        {option.id}
-
-      </div>
-
-
-      {/* ====================================== */}
-      {/* AUDIO BUTTON */}
-      {/* ====================================== */}
-
-      <button
-
-        type="button"
-
-        onClick={
-          handleSpeakerClick
-        }
-
-        disabled={
-          isDisabled
-        }
-
-        className="
-          absolute
-
-          top-3
-          right-3
-
-          z-50
-
-          flex
-          items-center
-          justify-center
-
-          w-11
-          h-11
-
-          rounded-full
-
-          bg-yellow-400
-
-          shadow
-
-          transition-transform
-
-          hover:bg-yellow-500
-          hover:scale-110
-
-          active:scale-95
-
-          disabled:opacity-50
-          disabled:cursor-not-allowed
-        "
-
-        title={
-          language === 'ms'
-            ? 'Dengar jawapan'
-            : 'Listen to option'
-        }
-
-        aria-label={
-          language === 'ms'
-            ? `Dengar ${option.text[language]}`
-            : `Listen to ${option.text[language]}`
-        }
-
-      >
-
-        🔊
-
-      </button>
+      
 
 
       {/* ====================================== */}
@@ -289,12 +173,17 @@ const QuestionCard: React.FC<
         {/* ==================================== */}
 
         <div
-          className="
-            w-full
 
-            h-[210px]
-            min-h-[210px]
-            max-h-[210px]
+  onClick={
+    handleImageClick
+  }
+
+  className="
+    w-full
+
+            h-[180px]
+min-h-[180px]
+max-h-[180px]
 
             mb-3
 
@@ -332,6 +221,56 @@ const QuestionCard: React.FC<
 
         </div>
 
+        {/* ==================================== */}
+{/* ANSWER BUTTON */}
+{/* ==================================== */}
+
+<button
+
+  onClick={(event) => {
+
+    event.stopPropagation();
+
+
+    if (!isDisabled) {
+
+      onSelect(option);
+
+    }
+
+  }}
+
+  disabled={isDisabled}
+
+  className="
+    mt-2
+
+    w-[80px]
+    h-[80px]
+
+    rounded-full
+
+    bg-green-500
+
+    text-white
+
+    text-4xl
+
+    font-black
+
+    shadow-lg
+
+    hover:scale-110
+
+    transition-transform
+  "
+
+>
+
+  {option.id}
+
+</button>
+
 
         {/* ==================================== */}
         {/* TEXT */}
@@ -366,7 +305,7 @@ const QuestionCard: React.FC<
 
               px-2
 
-              text-[30px]
+              text-[22px]
 
               font-bold
 
