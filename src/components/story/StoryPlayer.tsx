@@ -25,6 +25,9 @@ import { Scene05 } from '../../scenes/scene05/Scene05';
 // Scene08 is a default export.
 import Scene08 from '../../scenes/scene08/Scene08';
 
+// SceneCanvas for fixed 16:9 Scene08 stage.
+import { SceneCanvas } from '../scene/SceneCanvas';
+
 import { DeveloperPanel } from '../developer/DeveloperPanel';
 
 import {
@@ -888,17 +891,23 @@ export const StoryPlayer: React.FC<
 
         {activeScene ===
           'scene08' && (
-          <Scene08
-            accessCode={
-              childAccessCode ?? ''
-            }
-            onComplete={() => {
+          <SceneCanvas
+            variant="fullscreen"
+          >
 
-              setActiveScene(
-                'welcome'
-              );
-            }}
-          />
+            <Scene08
+              accessCode={
+                childAccessCode ?? ''
+              }
+              onComplete={() => {
+
+                setActiveScene(
+                  'welcome'
+                );
+              }}
+            />
+
+          </SceneCanvas>
         )}
 
       </main>

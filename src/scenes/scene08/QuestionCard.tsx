@@ -1,17 +1,36 @@
 import React from 'react';
-import { QuizOption } from './scene08.config';
+
+import {
+  QuizOption,
+} from './scene08.config';
+
 
 interface QuestionCardProps {
+
   option: QuizOption;
+
   isSelected: boolean;
+
   isDisabled: boolean;
+
   language: 'en' | 'ms';
+
   isScrollable?: boolean;
-  onSelect: (option: QuizOption) => void;
-  onPlayAudio: (audioPath: string) => void;
+
+  onSelect: (
+    option: QuizOption
+  ) => void;
+
+  onPlayAudio: (
+    audioPath: string
+  ) => void;
+
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({
+
+const QuestionCard: React.FC<
+  QuestionCardProps
+> = ({
   option,
   isSelected,
   isDisabled,
@@ -20,18 +39,29 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   onPlayAudio,
 }) => {
 
+
   // ============================================
-  // SPEAKER CLICK
+  // SPEAKER
   // ============================================
 
   const handleSpeakerClick = (
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
+
     event.stopPropagation();
 
-    if (!isDisabled && option.audio) {
-      onPlayAudio(option.audio[language]);
+
+    if (
+      !isDisabled &&
+      option.audio
+    ) {
+
+      onPlayAudio(
+        option.audio[language]
+      );
+
     }
+
   };
 
 
@@ -40,23 +70,33 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   // ============================================
 
   const handleCardClick = () => {
+
     if (!isDisabled) {
+
       onSelect(option);
+
     }
+
   };
 
 
   // ============================================
-  // BORDER STYLE
+  // BORDER
   // ============================================
 
   let borderStyle =
     'border-4 border-transparent hover:border-yellow-400';
 
+
   if (isSelected) {
-    borderStyle = option.isCorrect
-      ? 'border-4 border-green-500 bg-green-50'
-      : 'border-4 border-red-500 bg-red-50';
+
+    borderStyle =
+      option.isCorrect
+
+        ? 'border-4 border-green-500 bg-green-50'
+
+        : 'border-4 border-red-500 bg-red-50';
+
   }
 
 
@@ -65,8 +105,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   // ============================================
 
   return (
+
     <div
-      onClick={handleCardClick}
+
+      onClick={
+        handleCardClick
+      }
+
       className={`
         relative
 
@@ -103,6 +148,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             : 'cursor-pointer'
         }
       `}
+
     >
 
       {/* ====================================== */}
@@ -110,6 +156,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* ====================================== */}
 
       <div
+
         className="
           absolute
 
@@ -133,6 +180,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           bg-green-500
 
           text-white
+
           text-3xl
           font-black
 
@@ -140,9 +188,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
           pointer-events-none
         "
+
         aria-hidden="true"
+
       >
+
         {option.id}
+
       </div>
 
 
@@ -151,9 +203,17 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* ====================================== */}
 
       <button
+
         type="button"
-        onClick={handleSpeakerClick}
-        disabled={isDisabled}
+
+        onClick={
+          handleSpeakerClick
+        }
+
+        disabled={
+          isDisabled
+        }
+
         className="
           absolute
 
@@ -185,23 +245,28 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           disabled:opacity-50
           disabled:cursor-not-allowed
         "
+
         title={
           language === 'ms'
             ? 'Dengar jawapan'
             : 'Listen to option'
         }
+
         aria-label={
           language === 'ms'
             ? `Dengar ${option.text[language]}`
             : `Listen to ${option.text[language]}`
         }
+
       >
+
         🔊
+
       </button>
 
 
       {/* ====================================== */}
-      {/* CARD CONTENT */}
+      {/* CONTENT */}
       {/* ====================================== */}
 
       <div
@@ -218,7 +283,6 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           overflow-visible
         "
       >
-
 
         {/* ==================================== */}
         {/* IMAGE */}
@@ -243,9 +307,17 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             bg-gray-50
           "
         >
+
           <img
-            src={option.image}
-            alt={option.text[language]}
+
+            src={
+              option.image
+            }
+
+            alt={
+              option.text[language]
+            }
+
             className="
               block
 
@@ -255,12 +327,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               object-contain
               object-center
             "
+
           />
+
         </div>
 
 
         {/* ==================================== */}
-        {/* OPTION TEXT */}
+        {/* TEXT */}
         {/* ==================================== */}
 
         <div
@@ -307,16 +381,24 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               whitespace-normal
             "
           >
-            {option.text[language]}
+
+            {
+              option.text[
+                language
+              ]
+            }
+
           </span>
 
         </div>
 
-
       </div>
 
     </div>
+
   );
+
 };
+
 
 export default QuestionCard;

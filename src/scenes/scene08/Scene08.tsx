@@ -21,6 +21,12 @@ import {
 import correctSound from './audio/quiz/correct.mp3';
 import wrongSound from './audio/quiz/wrong.wav';
 
+import {
+  SCENE08_DESIGN_WIDTH,
+  SCENE08_DESIGN_HEIGHT,
+  getScene08StageSize,
+} from './scene08Responsive.config';
+
 
 // ============================================
 // PROPS
@@ -42,7 +48,7 @@ const Scene08: React.FC<Scene08Props> = ({
 }) => {
 
   // ==========================================
-  // STATE
+  // QUIZ STATE
   // ==========================================
 
   const [currentIndex, setCurrentIndex] =
@@ -72,8 +78,28 @@ const Scene08: React.FC<Scene08Props> = ({
   const bestScoreRef =
     useRef<number | undefined>(undefined);
 
-  const [hasPlayedBefore, setHasPlayedBefore] =
-    useState(false);
+
+  // ==========================================
+  // ACTUAL SCENE08 CONTAINER
+  // ==========================================
+  //
+  // Measure the actual space given to Scene08.
+  // This keeps the 16:9 design proportional on
+  // desktop, tablet and phone.
+  //
+  const sceneContainerRef =
+    useRef<HTMLDivElement | null>(null);
+
+
+  // ==========================================
+  // 16:9 STAGE SIZE
+  // ==========================================
+
+  const [stageSize, setStageSize] =
+    useState({
+      width: 0,
+      height: 0,
+    });
 
 
   // ==========================================
@@ -117,6 +143,71 @@ const Scene08: React.FC<Scene08Props> = ({
 
 
   // ==========================================
+  // UPDATE STAGE ON RESIZE
+  // ==========================================
+  //
+  // Measure the actual Scene08 container instead
+  // of using the whole browser viewport.
+  //
+  useEffect(() => {
+
+    const container =
+      sceneContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+
+    const updateStage =
+      () => {
+
+        const rect =
+          container.getBoundingClientRect();
+
+
+        if (
+          rect.width <= 0 ||
+          rect.height <= 0
+        ) {
+          return;
+        }
+
+
+        setStageSize(
+          getScene08StageSize(
+            rect.width,
+            rect.height
+          )
+        );
+
+      };
+
+
+    updateStage();
+
+
+    const resizeObserver =
+      new ResizeObserver(
+        updateStage
+      );
+
+
+    resizeObserver.observe(
+      container
+    );
+
+
+    return () => {
+
+      resizeObserver.disconnect();
+
+    };
+
+  }, []);
+
+
+  // ==========================================
   // STOP AUDIO
   // ==========================================
 
@@ -147,13 +238,17 @@ const Scene08: React.FC<Scene08Props> = ({
       return;
     }
 
+
     stopAudio();
+
 
     const audio =
       new Audio(audioPath);
 
+
     audioRef.current =
       audio;
+
 
     audio.play().catch(
       (error) => {
@@ -165,6 +260,7 @@ const Scene08: React.FC<Scene08Props> = ({
 
       }
     );
+
 
     audio.onended = () => {
 
@@ -191,8 +287,11 @@ const Scene08: React.FC<Scene08Props> = ({
       isFinished ||
       !currentQuestion
     ) {
+
       return;
+
     }
+
 
     const timer =
       window.setTimeout(() => {
@@ -205,6 +304,7 @@ const Scene08: React.FC<Scene08Props> = ({
         );
 
       }, 200);
+
 
     return () => {
 
@@ -262,12 +362,16 @@ const Scene08: React.FC<Scene08Props> = ({
     if (
       selectedOption !== null
     ) {
+
       return;
+
     }
+
 
     setSelectedOption(
       option
     );
+
 
     stopAudio();
 
@@ -307,6 +411,7 @@ const Scene08: React.FC<Scene08Props> = ({
           : wrongSound
       );
 
+
     feedback.play().catch(
       (error) => {
 
@@ -332,6 +437,7 @@ const Scene08: React.FC<Scene08Props> = ({
           previous + 10
       );
 
+
       setStreak(
         previous =>
           previous + 1
@@ -347,7 +453,7 @@ const Scene08: React.FC<Scene08Props> = ({
 
 
   // ==========================================
-  // NEXT QUESTION / FINISH
+  // NEXT / FINISH
   // ==========================================
 
   const handleNextQuestion =
@@ -357,8 +463,11 @@ const Scene08: React.FC<Scene08Props> = ({
         !selectedOption ||
         isSaving
       ) {
+
         return;
+
       }
+
 
       stopAudio();
 
@@ -377,9 +486,11 @@ const Scene08: React.FC<Scene08Props> = ({
             previous + 1
         );
 
+
         setSelectedOption(
           null
         );
+
 
         return;
 
@@ -411,6 +522,7 @@ const Scene08: React.FC<Scene08Props> = ({
 
       setIsSaving(true);
 
+
       try {
 
         console.log(
@@ -429,6 +541,7 @@ const Scene08: React.FC<Scene08Props> = ({
             answersRef.current
           );
 
+
         const latestBest =
           Math.max(
             score,
@@ -441,8 +554,10 @@ const Scene08: React.FC<Scene08Props> = ({
           latestBest
         );
 
+
         bestScoreRef.current =
           latestBest;
+
 
         console.log(
           'Scene08 result saved successfully.'
@@ -475,7 +590,6 @@ const Scene08: React.FC<Scene08Props> = ({
 
     stopAudio();
 
-    setHasPlayedBefore(true);
 
     setCurrentIndex(0);
 
@@ -498,7 +612,9 @@ const Scene08: React.FC<Scene08Props> = ({
 
 
   // ==========================================
+  // ==========================================
   // SCOREBOARD
+  // ==========================================
   // ==========================================
 
   if (isFinished) {
@@ -506,62 +622,118 @@ const Scene08: React.FC<Scene08Props> = ({
     return (
 
       <div
-        className="
-          relative
+        ref={sceneContainerRef}
 
+      className="
+          w-full
+          h-full
           flex
           items-center
           justify-center
-
-          w-full
-          h-full
-          min-h-0
-
           overflow-hidden
-
-          bg-cover
-          bg-center
-          bg-no-repeat
+          bg-slate-950
         "
-        style={{
-          backgroundImage:
-            `url("${backgroundImage}")`,
-        }}
       >
 
-        <ScoreBoard
+        {/* ================================== */}
+        {/* 16:9 SCOREBOARD STAGE */}
+        {/* ================================== */}
 
-          score={
-            score
-          }
+        <div
+          className="
+            relative
+            shrink-0
+            overflow-hidden
+            bg-black
+          "
+          style={{
+            width:
+              `${stageSize.width}px`,
 
-          bestScore={
-            bestScore
-          }
+            height:
+              `${stageSize.height}px`,
 
-          totalQuestions={
-            QUIZ_QUESTIONS.length
-          }
-
-          language={
-            language
-          }
-
-          onPlayAgain={
-            handlePlayAgain
-          }
-
-          onFinish={() => {
-
-            if (onComplete) {
-
-              onComplete();
-
-            }
-
+            aspectRatio:
+              '16 / 9',
           }}
+        >
 
-        />
+          {/* ================================= */}
+          {/* FIXED DESIGN SPACE */}
+          {/* ================================= */}
+
+          <div
+            className="
+              absolute
+              left-0
+              top-0
+              overflow-hidden
+            "
+            style={{
+              width:
+                `${SCENE08_DESIGN_WIDTH}px`,
+
+              height:
+                `${SCENE08_DESIGN_HEIGHT}px`,
+
+              transform:
+                `scale(${
+                  stageSize.width /
+                  SCENE08_DESIGN_WIDTH
+                })`,
+
+              transformOrigin:
+                'top left',
+
+              backgroundImage:
+                `url("${backgroundImage}")`,
+
+              backgroundSize:
+                'cover',
+
+              backgroundPosition:
+                'center',
+
+              backgroundRepeat:
+                'no-repeat',
+            }}
+          >
+
+            <ScoreBoard
+              score={
+                score
+              }
+
+              bestScore={
+                bestScore
+              }
+
+              totalQuestions={
+                QUIZ_QUESTIONS.length
+              }
+
+              language={
+                language
+              }
+
+              onPlayAgain={
+                handlePlayAgain
+              }
+
+              onFinish={() => {
+
+                if (onComplete) {
+
+                  onComplete();
+
+                }
+
+              }}
+            />
+
+          </div>
+
+        </div>
 
       </div>
 
@@ -571,224 +743,443 @@ const Scene08: React.FC<Scene08Props> = ({
 
 
   // ==========================================
+  // ==========================================
   // MAIN QUIZ
+  // ==========================================
   // ==========================================
 
   return (
 
     <div
+      ref={sceneContainerRef}
+
       className="
-        relative
-
-        flex
-        flex-col
-
         w-full
         h-full
-
-        min-h-0
-
-        p-5
-        pt-0
-
+        flex
+        items-center
+        justify-center
         overflow-hidden
-
-        bg-cover
-        bg-center
-        bg-no-repeat
+        bg-slate-950
       "
-      style={{
-        backgroundImage:
-          `url("${backgroundImage}")`,
-      }}
     >
 
-
-      {/* ==================================== */}
-      {/* HEADER */}
-      {/* ==================================== */}
+      {/* ====================================== */}
+      {/* 16:9 GAME STAGE */}
+      {/* ====================================== */}
 
       <div
         className="
-          w-full
-
-          shrink-0
-
-          flex
-          justify-center
-        "
-      >
-
-        <QuizHeader
-
-          currentStep={
-            currentIndex + 1
-          }
-
-          totalSteps={
-            QUIZ_QUESTIONS.length
-          }
-
-          score={
-            score
-          }
-
-          streak={
-            streak
-          }
-
-          language={
-            language
-          }
-
-          onLanguageChange={
-            handleLanguageChange
-          }
-
-        />
-
-      </div>
-
-
-      {/* ==================================== */}
-      {/* MAIN */}
-      {/* ==================================== */}
-
-      <main
-        className="
           relative
-
-          flex
-          flex-1
-          flex-col
-
-          items-center
-
-          w-full
-
-          min-h-0
-
-          pt-2
-
-          overflow-visible
+          shrink-0
+          overflow-hidden
+          bg-black
         "
+        style={{
+          width:
+            `${stageSize.width}px`,
+
+          height:
+            `${stageSize.height}px`,
+
+          aspectRatio:
+            '16 / 9',
+        }}
       >
 
-
-        {/* ================================== */}
-        {/* QUESTION PANEL */}
-        {/* ================================== */}
+        {/* ==================================== */}
+        {/* FIXED 1600 × 900 DESIGN SPACE */}
+        {/* ==================================== */}
 
         <div
           className="
-            relative
-
+            absolute
+            left-0
+            top-0
             flex
             flex-col
-
-            w-full
-
-            max-w-[1100px]
-
-            h-full
-
-            min-h-0
-
-            rounded-3xl
-
-            border-4
-            border-green-600
-
-            bg-yellow-50/90
-
-            shadow-2xl
-
             overflow-hidden
+            bg-cover
+            bg-center
+            bg-no-repeat
           "
+          style={{
+            width:
+              `${SCENE08_DESIGN_WIDTH}px`,
+
+            height:
+              `${SCENE08_DESIGN_HEIGHT}px`,
+
+            transform:
+              `scale(${
+                stageSize.width /
+                SCENE08_DESIGN_WIDTH
+              })`,
+
+            transformOrigin:
+              'top left',
+
+            backgroundImage:
+              `url("${backgroundImage}")`,
+          }}
         >
 
-
           {/* ================================= */}
-          {/* ONLY THIS AREA SCROLLS */}
+          {/* HEADER */}
           {/* ================================= */}
 
           <div
             className="
-              flex-1
-
               w-full
-
-              min-h-0
-
-              overflow-y-auto
-              overflow-x-hidden
-
-              px-6
-              py-5
-              pr-4
-              pb-8
-
-              scroll-smooth
-
-              overscroll-contain
+              shrink-0
+              flex
+              justify-center
             "
           >
 
+            <QuizHeader
+
+              currentStep={
+                currentIndex + 1
+              }
+
+              totalSteps={
+                QUIZ_QUESTIONS.length
+              }
+
+              score={
+                score
+              }
+
+              streak={
+                streak
+              }
+
+              language={
+                language
+              }
+
+              onLanguageChange={
+                handleLanguageChange
+              }
+
+            />
+
+          </div>
+
+
+          {/* ================================= */}
+          {/* MAIN */}
+          {/* ================================= */}
+
+          <main
+            className="
+              relative
+              flex
+              flex-1
+              flex-col
+              items-center
+              w-full
+              min-h-0
+              pt-2
+              overflow-visible
+              px-5
+            "
+          >
 
             {/* =============================== */}
-            {/* QUESTION NUMBER */}
+            {/* QUESTION PANEL */}
             {/* =============================== */}
 
             <div
               className="
+                absolute
+                left-1/2
+                bottom-5
+                -translate-x-1/2
                 flex
-                justify-center
-
-                w-full
-
-                mb-5
+                flex-col
+                w-[calc(100%_-_40px)]
+                max-w-[1100px]
+                h-[740px]
+                max-h-[calc(100%_-_5px)]
+                min-h-0
+                rounded-3xl
+                border-4
+                border-green-600
+                bg-yellow-50/90
+                shadow-2xl
+                overflow-hidden
               "
             >
 
+              {/* ============================= */}
+              {/* SCROLL AREA */}
+              {/* ============================= */}
+
               <div
                 className="
-                  inline-flex
+                  flex-1
+                  w-full
+                  min-h-0
 
-                  items-center
-                  justify-center
+                  ${
+                    currentQuestion.id === 5
+                      ? 'overflow-y-auto'
+                      : 'overflow-hidden'
+                  }
 
-                  gap-2
-
-                  px-7
-                  py-2.5
-
-                  rounded-full
-
-                  bg-green-600
-
-                  text-white
-
-                  text-xl
-
-                  font-extrabold
-
-                  shadow-md
+                  overflow-x-hidden
+                  px-6
+                  py-5
+                  pr-4
+                  pb-8
+                  scroll-smooth
+                  overscroll-contain
                 "
               >
 
-                <span>
-                  🌱
-                </span>
+                {/* =========================== */}
+                {/* QUESTION NUMBER */}
+                {/* =========================== */}
 
-                <span>
+                <div
+                  className="
+                    flex
+                    justify-center
+                    w-full
+                    mb-5
+                  "
+                >
+
+                  <div
+                    className="
+                      inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      px-7
+                      py-2.5
+                      rounded-full
+                      bg-green-600
+                      text-white
+                      text-xl
+                      font-extrabold
+                      shadow-md
+                    "
+                  >
+
+                    <span>
+                      🌱
+                    </span>
+
+                    <span>
+
+                      {
+                        language === 'ms'
+                          ? `Soalan ${currentQuestion.id}`
+                          : `Question ${currentQuestion.id}`
+                      }
+
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                {/* =========================== */}
+                {/* QUESTION */}
+                {/* =========================== */}
+
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-center
+                    gap-3
+                    w-full
+                    mb-6
+                    px-2
+                  "
+                >
+
+                  <h2
+                    className="
+                      w-full
+                      max-w-[950px]
+                      text-3xl
+                      md:text-4xl
+                      font-extrabold
+                      leading-tight
+                      text-center
+                      break-words
+                      text-green-950
+                    "
+                  >
+
+                    {
+                      currentQuestion
+                        .questionText[
+                          language
+                        ]
+                    }
+
+                  </h2>
+
+
+                  {/* QUESTION AUDIO */}
+
+                  <button
+                    type="button"
+
+                    onClick={() =>
+                      playAudio(
+                        currentQuestion
+                          .questionAudio[
+                            language
+                          ]
+                      )
+                    }
+
+                    className="
+                      shrink-0
+                      flex
+                      items-center
+                      justify-center
+                      text-3xl
+                      hover:scale-110
+                      active:scale-95
+                      transition-transform
+                    "
+
+                    aria-label={
+                      language === 'ms'
+                        ? 'Dengar soalan'
+                        : 'Listen to question'
+                    }
+                  >
+
+                    🔊
+
+                  </button>
+
+                </div>
+
+
+                {/* =========================== */}
+                {/* OPTIONS */}
+                {/* =========================== */}
+
+                <div
+                  className="
+                    grid
+                    grid-cols-1
+                    md:grid-cols-3
+                    gap-6
+                    w-full
+                    mb-6
+                    items-stretch
+                  "
+                >
 
                   {
-                    language === 'ms'
-                      ? `Soalan ${currentQuestion.id}`
-                      : `Question ${currentQuestion.id}`
+                    currentQuestion.options.map(
+                      (option) => (
+
+                        <QuestionCard
+
+                          key={
+                            option.id
+                          }
+
+                          option={
+                            option
+                          }
+
+                          isSelected={
+                            selectedOption?.id ===
+                            option.id
+                          }
+
+                          isDisabled={
+                            selectedOption !== null
+                          }
+
+                          language={
+                            language
+                          }
+
+                          isScrollable={
+                            false
+                          }
+
+                          onSelect={
+                            handleSelectOption
+                          }
+
+                          onPlayAudio={
+                            playAudio
+                          }
+
+                        />
+
+                      )
+                    )
                   }
 
-                </span>
+                </div>
+
+
+                {/* =========================== */}
+                {/* TIP */}
+                {/* =========================== */}
+
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    w-full
+                    min-h-[76px]
+                    p-4
+                    rounded-3xl
+                    border
+                    border-amber-300
+                    bg-amber-100
+                  "
+                >
+
+                  <span
+                    className="
+                      flex-shrink-0
+                      text-3xl
+                    "
+                  >
+                    💡
+                  </span>
+
+
+                  <p
+                    className="
+                      text-[22px]
+                      font-medium
+                      leading-snug
+                      text-amber-900
+                      break-words
+                    "
+                  >
+
+                    {
+                      currentQuestion
+                        .hintText[
+                          language
+                        ]
+                    }
+
+                  </p>
+
+                </div>
 
               </div>
 
@@ -796,387 +1187,135 @@ const Scene08: React.FC<Scene08Props> = ({
 
 
             {/* =============================== */}
-            {/* QUESTION TEXT */}
+            {/* NEXT */}
             {/* =============================== */}
 
-            <div
-              className="
-                flex
+            <button
+              type="button"
 
+              disabled={
+                !selectedOption ||
+                isSaving
+              }
+
+              onClick={() => {
+                void handleNextQuestion();
+              }}
+
+              className={`
+                absolute
+                right-5
+                bottom-5
+                z-[100]
+                flex
                 items-center
                 justify-center
+                gap-2
+                w-[180px]
+                h-[68px]
+                px-4
+                rounded-full
+                border-2
+                border-white/70
+                shadow-xl
+                text-white
+                text-[20px]
+                font-extrabold
+                whitespace-nowrap
+                leading-none
+                transition-all
 
-                gap-3
+                ${
+                  selectedOption &&
+                  !isSaving
 
-                w-full
+                    ? `
+                      bg-gradient-to-r
+                      from-[#00b77f]
+                      to-[#0797b5]
+                      hover:scale-105
+                      hover:shadow-2xl
+                      cursor-pointer
+                    `
 
-                mb-6
-
-                px-2
-              "
-            >
-
-              <h2
-                className="
-                  w-full
-
-                  max-w-[950px]
-
-                  text-3xl
-                  md:text-4xl
-
-                  font-extrabold
-
-                  leading-tight
-
-                  text-center
-
-                  break-words
-
-                  text-green-950
-                "
-              >
-
-                {
-                  currentQuestion
-                    .questionText[
-                      language
-                    ]
+                    : `
+                      bg-gradient-to-r
+                      from-gray-400
+                      to-gray-500
+                      opacity-60
+                      cursor-not-allowed
+                    `
                 }
-
-              </h2>
-
-
-              {/* QUESTION AUDIO */}
-
-              <button
-                type="button"
-
-                onClick={() =>
-                  playAudio(
-                    currentQuestion
-                      .questionAudio[
-                        language
-                      ]
-                  )
-                }
-
-                className="
-                  shrink-0
-
-                  flex
-                  items-center
-                  justify-center
-
-                  text-3xl
-
-                  hover:scale-110
-
-                  active:scale-95
-
-                  transition-transform
-                "
-
-                aria-label={
-                  language === 'ms'
-                    ? 'Dengar soalan'
-                    : 'Listen to question'
-                }
-              >
-
-                🔊
-
-              </button>
-
-            </div>
-
-
-            {/* =============================== */}
-            {/* ANSWER OPTIONS */}
-            {/* =============================== */}
-
-            <div
-              className="
-                grid
-
-                grid-cols-1
-                md:grid-cols-3
-
-                gap-6
-
-                w-full
-
-                mb-6
-
-                items-stretch
-              "
-            >
-
-              {currentQuestion.options.map(
-                (option) => (
-
-                  <QuestionCard
-                    key={option.id}
-
-                    option={option}
-
-                    isSelected={
-                      selectedOption?.id ===
-                      option.id
-                    }
-
-                    isDisabled={
-                      selectedOption !== null
-                    }
-
-                    language={
-                      language
-                    }
-
-                    isScrollable={
-                      false
-                    }
-
-                    onSelect={
-                      handleSelectOption
-                    }
-
-                    onPlayAudio={
-                      playAudio
-                    }
-                  />
-
-                )
-              )}
-
-            </div>
-
-
-            {/* =============================== */}
-            {/* TIP BOX */}
-            {/* =============================== */}
-
-            <div
-              className="
-                flex
-
-                items-center
-
-                gap-3
-
-                w-full
-
-                min-h-[76px]
-
-                p-4
-
-                rounded-3xl
-
-                border
-                border-amber-300
-
-                bg-amber-100
-              "
+              `}
             >
 
               <span
                 className="
-                  flex-shrink-0
-
-                  text-3xl
-                "
-              >
-                💡
-              </span>
-
-
-              <p
-                className="
-                  text-[22px]
-
-                  font-medium
-
-                  leading-snug
-
-                  text-amber-900
-
-                  break-words
+                  flex
+                  items-center
+                  justify-center
+                  whitespace-nowrap
+                  leading-none
+                  text-center
                 "
               >
 
                 {
-                  currentQuestion
-                    .hintText[
-                      language
-                    ]
+                  isSaving
+
+                    ? language === 'ms'
+                      ? 'Menyimpan...'
+                      : 'Saving...'
+
+                    : currentIndex ===
+                        QUIZ_QUESTIONS.length - 1
+
+                      ? language === 'ms'
+                        ? 'Tamat'
+                        : 'Finish'
+
+                      : language === 'ms'
+                        ? 'Seterusnya'
+                        : 'Next'
                 }
 
-              </p>
-
-            </div>
+              </span>
 
 
-          </div>
+              <span
+                className="
+                  flex
+                  items-center
+                  justify-center
+                  w-9
+                  h-9
+                  min-w-[36px]
+                  rounded-full
+                  bg-white/15
+                  text-[22px]
+                  leading-none
+                  font-light
+                  shrink-0
+                "
+              >
+
+                →
+
+              </span>
+
+            </button>
+
+          </main>
 
         </div>
 
-
-        {/* ================================== */}
-        {/* NEXT BUTTON */}
-        {/* ================================== */}
-
-        <button
-          type="button"
-
-          disabled={
-            !selectedOption ||
-            isSaving
-          }
-
-          onClick={() => {
-            void handleNextQuestion();
-          }}
-
-          className={`
-            fixed
-
-            right-5
-
-            bottom-5
-
-            z-[100]
-
-            flex
-            items-center
-            justify-center
-
-            gap-2
-
-            w-[180px]
-            h-[68px]
-
-            px-4
-
-            rounded-full
-
-            border-2
-            border-white/70
-
-            shadow-xl
-
-            text-white
-
-            text-[20px]
-
-            font-extrabold
-
-            whitespace-nowrap
-
-            leading-none
-
-            transition-all
-
-            ${
-              selectedOption &&
-              !isSaving
-
-                ? `
-                  bg-gradient-to-r
-                  from-[#00b77f]
-                  to-[#0797b5]
-
-                  hover:scale-105
-                  hover:shadow-2xl
-
-                  cursor-pointer
-                `
-
-                : `
-                  bg-gradient-to-r
-                  from-gray-400
-                  to-gray-500
-
-                  opacity-60
-
-                  cursor-not-allowed
-                `
-            }
-          `}
-        >
-
-          <span
-            className="
-              flex
-              items-center
-              justify-center
-
-              whitespace-nowrap
-
-              leading-none
-
-              text-center
-            "
-          >
-
-            {
-              isSaving
-
-                ? language === 'ms'
-                  ? 'Menyimpan...'
-                  : 'Saving...'
-
-                : currentIndex ===
-                    QUIZ_QUESTIONS.length - 1
-
-                  ? language === 'ms'
-                    ? 'Tamat'
-                    : 'Finish'
-
-                  : language === 'ms'
-                    ? 'Seterusnya'
-                    : 'Next'
-            }
-
-          </span>
-
-
-          <span
-            className="
-              flex
-              items-center
-              justify-center
-
-              w-9
-              h-9
-
-              min-w-[36px]
-
-              rounded-full
-
-              bg-white/15
-
-              text-[22px]
-
-              leading-none
-
-              font-light
-
-              shrink-0
-            "
-          >
-
-            →
-
-          </span>
-
-        </button>
-
-
-      </main>
+      </div>
 
     </div>
 
   );
+
 };
+
 
 export default Scene08;

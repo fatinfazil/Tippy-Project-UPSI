@@ -1,5 +1,4 @@
 import React from 'react';
-import { STORY_STAGE_ASPECT_RATIO } from '../../config/scene1.config';
 
 interface SceneCanvasProps {
   children: React.ReactNode;
@@ -28,15 +27,13 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
         min-w-0
       "
     >
-
       <div
         className={`
           relative
-          overflow-hidden
           flex
           items-center
           justify-center
-          transition-all
+          overflow-hidden
 
           ${
             variant === 'fullscreen'
@@ -58,26 +55,37 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
           }
         `}
         style={{
+          /*
+           * =========================================
+           * FIXED GAME STAGE
+           * =========================================
+           *
+           * The game itself ALWAYS uses 16:9.
+           *
+           * The stage will shrink to fit whichever
+           * dimension is smaller:
+           *
+           * - available width
+           * - available height
+           *
+           * This prevents cropping on phones/tablets.
+           */
           aspectRatio: '16 / 9',
 
+          width: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+
           /*
-            IMPORTANT:
-            Keep the game stage at 16:9.
-            Letterbox empty space if screen ratio differs.
-          */
+           * Let aspect-ratio determine the height.
+           */
+          height: 'auto',
 
-          width: 'min(100%, calc(100vh * 16 / 9))',
-
-          height: 'min(100%, calc(100vw * 9 / 16))',
-
-          position: 'relative',
+          flexShrink: 1,
         }}
       >
-
         {children}
-
       </div>
-
     </div>
   );
 };
